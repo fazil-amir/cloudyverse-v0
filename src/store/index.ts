@@ -3,6 +3,8 @@ import userReducer from '@/store/slices/user.slice'
 import storageReducer from '@/store/slices/storage.slice'
 import setupReducer from '@/store/slices/setup.slice'
 import settingsReducer from '@/store/slices/settings.slice'
+import fileManagerReducer from '@/store/slices/filemanager.slice';
+import { errorToastMiddleware } from '@/store/middleware/error-toast.middleware'
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +12,7 @@ export const store = configureStore({
     storage: storageReducer,
     setup: setupReducer,
     settings: settingsReducer,
+    filemanager: fileManagerReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -21,7 +24,7 @@ export const store = configureStore({
         // Ignore these paths in the state
         ignoredPaths: ['user.token'],
       },
-    }),
+    }).concat(errorToastMiddleware),
 })
 
 export type RootState = ReturnType<typeof store.getState>

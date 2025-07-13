@@ -1,6 +1,8 @@
 import { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { BaseStorageAdapter, UploadResult, FileInfo } from './base.adapter.js';
+import { createReadStream } from 'fs';
+import { UPLOADS_BASE_DIR } from '@/constants/app-constants.constants.js';
 
 export class S3StorageAdapter extends BaseStorageAdapter {
   private s3Client: S3Client;
@@ -29,7 +31,8 @@ export class S3StorageAdapter extends BaseStorageAdapter {
   }
 
   private getS3Key(relativePath: string, fileName?: string): string {
-    const baseKey = this.getFullPath(relativePath);
+    // Always use UPLOADS_BASE_DIR as the logical root
+    const baseKey = relativePath ? `${UPLOADS_BASE_DIR}/${relativePath}` : `${UPLOADS_BASE_DIR}`;
     return fileName ? `${baseKey}/${fileName}` : baseKey;
   }
 
@@ -38,46 +41,54 @@ export class S3StorageAdapter extends BaseStorageAdapter {
       throw new Error('Invalid path');
     }
 
+    // At root, prefix should be 'uploads/'
     const prefix = this.getS3Key(relativePath);
     const delimiter = '/';
 
     try {
       const command = new ListObjectsV2Command({
         Bucket: this.bucketName,
-        Prefix: prefix,
+        Prefix: prefix.endsWith('/') ? prefix : prefix + '/',
         Delimiter: delimiter,
       });
 
       const response = await this.s3Client.send(command);
-      
-      const files: string[] = [];
-      const folders: string[] = [];
 
-      // Handle files
+      // Debug log
+      console.log('S3 List Response:', {
+        Prefix: prefix,
+        Contents: response.Contents?.map(obj => obj.Key),
+        CommonPrefixes: response.CommonPrefixes?.map(cp => cp.Prefix)
+      });
+
+      const files: string[] = [];
+      const folders: Set<string> = new Set();
+
+      // Folders from CommonPrefixes
+      if (response.CommonPrefixes) {
+        for (const commonPrefix of response.CommonPrefixes) {
+          if (commonPrefix.Prefix) {
+            let folderName = commonPrefix.Prefix.replace(prefix.endsWith('/') ? prefix : prefix + '/', '').replace(/\/$/, '');
+            if (folderName) folders.add(folderName);
+          }
+        }
+      }
+
+      // Folders from marker objects (keys ending with '/')
       if (response.Contents) {
         for (const object of response.Contents) {
           if (object.Key && object.Key !== prefix) {
-            const fileName = object.Key.replace(prefix, '').replace(/^\//, '');
-            if (fileName && !fileName.includes('/')) {
+            const fileName = object.Key.replace(prefix.endsWith('/') ? prefix : prefix + '/', '');
+            if (fileName.endsWith('/')) {
+              folders.add(fileName.replace(/\/$/, ''));
+            } else if (fileName && !fileName.includes('/')) {
               files.push(fileName);
             }
           }
         }
       }
 
-      // Handle folders (common prefixes)
-      if (response.CommonPrefixes) {
-        for (const commonPrefix of response.CommonPrefixes) {
-          if (commonPrefix.Prefix) {
-            const folderName = commonPrefix.Prefix.replace(prefix, '').replace(/^\//, '').replace(/\/$/, '');
-            if (folderName) {
-              folders.push(folderName);
-            }
-          }
-        }
-      }
-
-      return { files, folders };
+      return { files, folders: Array.from(folders) };
     } catch (error) {
       throw new Error(`Failed to list files: ${error}`);
     }
@@ -98,7 +109,7 @@ export class S3StorageAdapter extends BaseStorageAdapter {
         const command = new PutObjectCommand({
           Bucket: this.bucketName,
           Key: key,
-          Body: require('fs').createReadStream(file.path),
+          Body: createReadStream(file.path),
           ContentType: file.mimetype,
         });
 

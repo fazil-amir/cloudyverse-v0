@@ -4,6 +4,7 @@ import { store } from '@/store'
 import { useEffect, useState, createContext, useContext } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchUserProfile } from '@/store/slices/user.slice'
+import { Notifications } from '@mantine/notifications'
 
 import { Blank, Default } from '@/components/layouts'
 import AuthGuard from '@/components/auth-guard'
@@ -81,6 +82,7 @@ const SetupGuard = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   return (
     <Provider store={store}>
+      <Notifications position="top-right" zIndex={1000} />
       <SetupStatusProvider>
         <Router>
           <SetupGuard>

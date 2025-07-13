@@ -36,11 +36,10 @@ export const storageModel = {
   // Set current storage backend
   setCurrent: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     const db = getDatabase();
-    // First, set all backends to not current
-    db.prepare('UPDATE storage_backends SET is_current = 0').run();
-    
-    // Then set the specified backend as current
-    const stmt = db.prepare('UPDATE storage_backends SET is_current = 1 WHERE backend_type = ?');
+    // Set all backends to not current and not enabled
+    db.prepare('UPDATE storage_backends SET is_current = 0, enabled = 0').run();
+    // Set the specified backend as current and enabled
+    const stmt = db.prepare('UPDATE storage_backends SET is_current = 1, enabled = 1 WHERE backend_type = ?');
     return stmt.run(backendType);
   },
 

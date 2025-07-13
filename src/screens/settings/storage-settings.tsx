@@ -14,9 +14,22 @@ import {
   Badge,
   Select,
   PasswordInput,
-  LoadingOverlay
+  LoadingOverlay,
+  ActionIcon,
+  Tooltip,
+  Box,
+  Flex
 } from '@mantine/core';
-import { IconCloud, IconSettings, IconCheck, IconX } from '@tabler/icons-react';
+import { 
+  IconCloud, 
+  IconSettings, 
+  IconCheck, 
+  IconX, 
+  IconEdit, 
+  IconTestPipe,
+  IconDatabase,
+  IconServer
+} from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { 
   setCurrentBackend, 
@@ -28,25 +41,29 @@ import {
 import {
   testStorageConnection,
   clearError,
-  clearSuccess
+  clearSuccess,
+  loadStorageBackends,
+  setCurrentBackend as setCurrentBackendSettings,
+  updateBackendConfig as updateBackendConfigSettings,
+  toggleBackend as toggleBackendSettings,
+  StorageBackend
 } from '@/store/slices/settings.slice';
 
 const StorageSettings: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { currentBackend, backends: storageBackends, error: storageError } = useAppSelector((state) => state.storage);
-  const { error, success, isLoading } = useAppSelector((state) => state.settings);
+  const { currentBackend} = useAppSelector((state) => state.storage);
+  const { isLoading, storageBackends: settingsBackends, isUpdatingBackend } = useAppSelector((state) => state.settings);
   
-  const [backends, setBackends] = useState<StorageConfig[]>([]);
+  const [backends, setBackends] = useState<StorageBackend[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [editingBackend, setEditingBackend] = useState<string | null>(null);
   const [editConfig, setEditConfig] = useState<Record<string, any>>({});
   const [testResult, setTestResult] = useState<Record<string, string | null>>({});
   const testLoading = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
-    loadBackends();
-  }, []);
+    dispatch(loadStorageBackends());
+  }, [dispatch]);
 
   // Clear errors and success messages
   useEffect(() => {
@@ -55,92 +72,26 @@ const StorageSettings: React.FC = () => {
     dispatch(clearStorageError());
   }, [dispatch]);
 
-  const loadBackends = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/storage/backends', {
-        credentials: 'include'
-      });
-      const data = await response.json();
-      setBackends(data.backends);
-    } catch (error) {
-      // Error handling is done in Redux
-    } finally {
+  // Update local backends when Redux state changes
+  useEffect(() => {
+    if (settingsBackends.length > 0) {
+      setBackends(settingsBackends);
       setLoading(false);
     }
-  };
+  }, [settingsBackends]);
 
   const handleToggleBackend = async (backendType: string) => {
-    try {
-      setSaving(true);
-      const response = await fetch(`/api/storage/backends/${backendType}/toggle`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        await loadBackends();
-        dispatch(toggleBackend(backendType as 'LOCAL' | 'S3' | 'R2'));
-      } else {
-        // Error handling is done in Redux
-      }
-    } catch (error) {
-      // Error handling is done in Redux
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSetCurrentBackend = async (backendType: string) => {
-    try {
-      setSaving(true);
-      const response = await fetch('/api/storage/backends/current', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ backendType })
-      });
-      
-      if (response.ok) {
-        await loadBackends();
-        dispatch(setCurrentBackend(backendType as 'LOCAL' | 'S3' | 'R2'));
-      } else {
-        // Error handling is done in Redux
-      }
-    } catch (error) {
-      // Error handling is done in Redux
-    } finally {
-      setSaving(false);
+    // Only allow valid types for setCurrentBackendSettings
+    if (['LOCAL', 'S3', 'R2'].includes(backendType)) {
+      await dispatch(setCurrentBackendSettings(backendType as 'LOCAL' | 'S3' | 'R2'));
+      await dispatch(loadStorageBackends());
     }
   };
 
   const handleUpdateConfig = async (backendType: string) => {
-    try {
-      setSaving(true);
-      const response = await fetch(`/api/storage/backends/${backendType}/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(editConfig)
-      });
-      
-      if (response.ok) {
-        await loadBackends();
-        setEditingBackend(null);
-        setEditConfig({});
-        dispatch(updateBackendConfig({ 
-          backend: backendType as 'LOCAL' | 'S3' | 'R2', 
-          config: editConfig 
-        }));
-      } else {
-        // Error handling is done in Redux
-      }
-    } catch (error) {
-      // Error handling is done in Redux
-    } finally {
-      setSaving(false);
-    }
+    await dispatch(updateBackendConfigSettings({ backendType, config: editConfig }));
+    setEditingBackend(null);
+    setEditConfig({});
   };
 
   const handleTestConnection = async (backendType: string) => {
@@ -151,14 +102,13 @@ const StorageSettings: React.FC = () => {
     
     if (testStorageConnection.fulfilled.match(result)) {
       setTestResult((prev) => ({ ...prev, [backendType]: 'success' }));
-    } else {
-      setTestResult((prev) => ({ ...prev, [backendType]: 'Connection failed' }));
     }
+    // Don't handle errors here - let the Redux middleware handle them
     
     testLoading.current[backendType] = false;
   };
 
-  const startEditing = (backend: StorageConfig) => {
+  const startEditing = (backend: StorageBackend) => {
     setEditingBackend(backend.backend);
     setEditConfig(backend.config || {});
   };
@@ -171,15 +121,30 @@ const StorageSettings: React.FC = () => {
   const getBackendIcon = (backendType: string) => {
     switch (backendType) {
       case 'LOCAL':
-        return '💾';
+        return <IconDatabase size={24} />;
       case 'S3':
-        return '☁️';
+        return <IconCloud size={24} />;
       case 'R2':
-        return '⚡';
+        return <IconServer size={24} />;
       case 'WASABI':
-        return '🌊';
+        return <IconServer size={24} />;
       default:
-        return '📁';
+        return <IconDatabase size={24} />;
+    }
+  };
+
+  const getBackendColor = (backendType: string) => {
+    switch (backendType) {
+      case 'LOCAL':
+        return 'blue';
+      case 'S3':
+        return 'green';
+      case 'R2':
+        return 'orange';
+      case 'WASABI':
+        return 'cyan';
+      default:
+        return 'gray';
     }
   };
 
@@ -223,34 +188,32 @@ const StorageSettings: React.FC = () => {
         <div>
           <Title order={2} mb="xs">
             <IconSettings size={24} style={{ marginRight: 8 }} />
-            Storage Settings
+            Storage Backends
           </Title>
           <Text c="dimmed">
-            Configure your storage backends and switch between them
+            Configure and manage your storage backends. Only one backend can be active at a time.
           </Text>
         </div>
 
-        {(error || storageError) && (
-          <Alert icon={<IconX size={16} />} title="Error" color="red">
-            {error || storageError}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert icon={<IconCheck size={16} />} title="Success" color="green">
-            {success}
-          </Alert>
-        )}
-
         <Stack gap="md">
           {backends.map((backend) => (
-            <Card key={backend.backend} withBorder p="md">
-              <Stack gap="md">
-                <Group justify="space-between">
+            <Card 
+              key={backend.backend} 
+              withBorder 
+              p="lg"
+            >
+              <Stack gap="lg">
+                <Flex justify="space-between" align="center">
                   <Group>
-                    <Text size="xl">{getBackendIcon(backend.backend)}</Text>
+                    <Box
+                      style={{
+                        color: `var(--mantine-color-${getBackendColor(backend.backend)}-6)`,
+                      }}
+                    >
+                      {getBackendIcon(backend.backend)}
+                    </Box>
                     <div>
-                      <Text fw={500}>{backend.name}</Text>
+                      <Text fw={600} size="lg">{backend.name}</Text>
                       <Text size="sm" c="dimmed">
                         {backend.backend}
                       </Text>
@@ -258,110 +221,132 @@ const StorageSettings: React.FC = () => {
                   </Group>
                   
                   <Group>
-                    {backend.backend === currentBackend && (
-                      <Badge color="green" variant="light">
-                        Current
+                    {backend.enabled && (
+                      <Badge 
+                        color={getBackendColor(backend.backend)} 
+                        variant="filled"
+                        size="lg"
+                      >
+                        Active
                       </Badge>
                     )}
                     <Switch
                       checked={backend.enabled}
                       onChange={() => handleToggleBackend(backend.backend)}
-                      disabled={saving}
+                      disabled={isLoading || isUpdatingBackend}
+                      size="lg"
                     />
                   </Group>
-                </Group>
+                </Flex>
 
-                {backend.enabled && backend.backend !== currentBackend && (
-                  <Button
-                    variant="light"
-                    size="sm"
-                    onClick={() => handleSetCurrentBackend(backend.backend)}
-                    disabled={saving}
-                  >
-                    Set as Current
-                  </Button>
-                )}
-
-                <Group>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => handleTestConnection(backend.backend)}
-                    loading={!!testLoading.current[backend.backend]}
-                  >
-                    Test Connection
-                  </Button>
-                  {testResult[backend.backend] === 'success' && (
-                    <Alert color="green" icon={<IconCheck size={16} />} title="Success" mt="xs">
-                      Connection successful!
-                    </Alert>
-                  )}
-                  {testResult[backend.backend] && testResult[backend.backend] !== 'success' && (
-                    <Alert color="red" icon={<IconX size={16} />} title="Error" mt="xs">
-                      {testResult[backend.backend]}
-                    </Alert>
-                  )}
-                </Group>
-
-                {editingBackend === backend.backend ? (
+                {backend.enabled && (
                   <Stack gap="md">
                     <Divider />
-                    <Text size="sm" fw={500}>Configuration</Text>
                     
-                    {getConfigFields(backend.backend).map((field) => (
-                      <div key={field.key}>
-                        {field.type === 'password' ? (
-                          <PasswordInput
-                            label={field.label}
-                            placeholder={field.placeholder}
-                            value={editConfig[field.key] || ''}
-                            onChange={(e) => setEditConfig({
-                              ...editConfig,
-                              [field.key]: e.target.value
-                            })}
-                            required={field.required}
-                          />
-                        ) : (
-                          <TextInput
-                            label={field.label}
-                            placeholder={field.placeholder}
-                            value={editConfig[field.key] || ''}
-                            onChange={(e) => setEditConfig({
-                              ...editConfig,
-                              [field.key]: e.target.value
-                            })}
-                            required={field.required}
-                          />
-                        )}
-                      </div>
-                    ))}
-                    
-                    <Group>
-                      <Button
-                        size="sm"
-                        onClick={() => handleUpdateConfig(backend.backend)}
-                        loading={saving}
-                      >
-                        Save Configuration
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        onClick={cancelEditing}
-                      >
-                        Cancel
-                      </Button>
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500} c="dimmed">Configuration</Text>
+                      <Group gap="xs">
+                        <Tooltip label="Test Connection">
+                          <ActionIcon
+                            variant="light"
+                            color={getBackendColor(backend.backend)}
+                            onClick={() => handleTestConnection(backend.backend)}
+                            loading={!!testLoading.current[backend.backend]}
+                            disabled={isUpdatingBackend}
+                          >
+                            <IconTestPipe size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                        
+                        <Tooltip label="Edit Configuration">
+                          <ActionIcon
+                            variant="light"
+                            color={getBackendColor(backend.backend)}
+                            onClick={() => startEditing(backend)}
+                            disabled={isUpdatingBackend}
+                          >
+                            <IconEdit size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </Group>
                     </Group>
+
+                    {editingBackend === backend.backend ? (
+                      <Card withBorder p="md" bg="var(--mantine-color-gray-0)">
+                        <Stack gap="md">
+                          <Text size="sm" fw={500}>Edit Configuration</Text>
+                          
+                          {getConfigFields(backend.backend).map((field) => (
+                            <div key={field.key}>
+                              {field.type === 'password' ? (
+                                <PasswordInput
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  value={editConfig[field.key] || ''}
+                                  onChange={(e) => setEditConfig({
+                                    ...editConfig,
+                                    [field.key]: e.target.value
+                                  })}
+                                  required={field.required}
+                                  size="sm"
+                                />
+                              ) : (
+                                <TextInput
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  value={editConfig[field.key] || ''}
+                                  onChange={(e) => setEditConfig({
+                                    ...editConfig,
+                                    [field.key]: e.target.value
+                                  })}
+                                  required={field.required}
+                                  size="sm"
+                                />
+                              )}
+                            </div>
+                          ))}
+                          
+                          <Group justify="flex-end">
+                            <Button
+                              size="sm"
+                              variant="light"
+                              onClick={cancelEditing}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              color={getBackendColor(backend.backend)}
+                              onClick={() => handleUpdateConfig(backend.backend)}
+                              loading={isUpdatingBackend}
+                            >
+                              Save Configuration
+                            </Button>
+                          </Group>
+                        </Stack>
+                      </Card>
+                    ) : (
+                      <Card withBorder p="md" bg="var(--mantine-color-gray-0)">
+                        <Stack gap="xs">
+                          <Text size="sm" fw={500}>Current Configuration</Text>
+                          {Object.entries(backend.config || {}).map(([key, value]) => (
+                            <Group key={key} justify="space-between">
+                              <Text size="sm" c="dimmed">{key}:</Text>
+                              <Text size="sm" style={{ fontFamily: 'monospace' }}>
+                                {typeof value === 'string' && value.length > 20 
+                                  ? value.substring(0, 20) + '...' 
+                                  : String(value)
+                                }
+                              </Text>
+                            </Group>
+                          ))}
+                          {Object.keys(backend.config || {}).length === 0 && (
+                            <Text size="sm" c="dimmed">No configuration set</Text>
+                          )}
+                        </Stack>
+                      </Card>
+                    )}
                   </Stack>
-                ) : (
-                  <Button
-                    variant="subtle"
-                    size="sm"
-                    onClick={() => startEditing(backend)}
-                    disabled={saving}
-                  >
-                    Edit Configuration
-                  </Button>
                 )}
               </Stack>
             </Card>

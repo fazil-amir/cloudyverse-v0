@@ -15,23 +15,34 @@ export interface NewUser {
   name?: string
 }
 
+export interface StorageBackend {
+  backend: 'LOCAL' | 'S3' | 'R2'
+  name: string
+  enabled: boolean
+  config: Record<string, any>
+}
+
 export interface SettingsState {
   users: User[]
+  storageBackends: StorageBackend[]
   isLoading: boolean
   error: string | null
   success: string | null
   isCreatingUser: boolean
   showCreateUserModal: boolean
+  isUpdatingBackend: boolean
 }
 
 // Initial state
 const initialState: SettingsState = {
   users: [],
+  storageBackends: [],
   isLoading: false,
   error: null,
   success: null,
   isCreatingUser: false,
   showCreateUserModal: false,
+  isUpdatingBackend: false,
 }
 
 // Async thunks
@@ -103,6 +114,98 @@ export const deleteUser = createAsyncThunk(
   }
 )
 
+export const loadStorageBackends = createAsyncThunk(
+  'settings/loadStorageBackends',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch('http://localhost:3006/api/storage/backends', {
+        credentials: 'include',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return rejectWithValue(data.error || 'Failed to load storage backends')
+      }
+
+      return data.backends || []
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
+export const setCurrentBackend = createAsyncThunk(
+  'settings/setCurrentBackend',
+  async (backendType: 'LOCAL' | 'S3' | 'R2', { rejectWithValue }) => {
+    try {
+      const response = await fetch('http://localhost:3006/api/storage/backends/current', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ backendType }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        return rejectWithValue(data.error || 'Failed to change storage backend')
+      }
+
+      return backendType
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
+export const updateBackendConfig = createAsyncThunk(
+  'settings/updateBackendConfig',
+  async ({ backendType, config }: { backendType: string; config: Record<string, any> }, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`http://localhost:3006/api/storage/backends/${backendType}/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(config),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        return rejectWithValue(data.error || 'Failed to update configuration')
+      }
+
+      return { backendType, config }
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
+export const toggleBackend = createAsyncThunk(
+  'settings/toggleBackend',
+  async (backendType: 'LOCAL' | 'S3' | 'R2', { rejectWithValue }) => {
+    try {
+      const response = await fetch(`http://localhost:3006/api/storage/backends/${backendType}/toggle`, {
+        method: 'PUT',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        return rejectWithValue(data.error || 'Failed to toggle backend')
+      }
+
+      return backendType
+    } catch (error) {
+      return rejectWithValue('Network error occurred')
+    }
+  }
+)
+
 export const testStorageConnection = createAsyncThunk(
   'settings/testConnection',
   async (backendType: string, { rejectWithValue }) => {
@@ -114,7 +217,7 @@ export const testStorageConnection = createAsyncThunk(
       })
 
       const data = await response.json()
-
+      console.log(data)
       if (!response.ok) {
         return rejectWithValue(data.error || 'Connection test failed')
       }
@@ -197,6 +300,79 @@ const settingsSlice = createSlice({
         state.error = action.payload as string
       })
 
+    // Load Storage Backends
+    builder
+      .addCase(loadStorageBackends.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(loadStorageBackends.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.storageBackends = action.payload
+        state.error = null
+      })
+      .addCase(loadStorageBackends.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+    // Set Current Backend
+    builder
+      .addCase(setCurrentBackend.pending, (state) => {
+        state.isUpdatingBackend = true
+        state.error = null
+      })
+      .addCase(setCurrentBackend.fulfilled, (state, action) => {
+        state.isUpdatingBackend = false
+        state.success = `Storage backend changed to ${action.payload}`
+        state.error = null
+      })
+      .addCase(setCurrentBackend.rejected, (state, action) => {
+        state.isUpdatingBackend = false
+        state.error = action.payload as string
+      })
+
+    // Update Backend Config
+    builder
+      .addCase(updateBackendConfig.pending, (state) => {
+        state.isUpdatingBackend = true
+        state.error = null
+      })
+      .addCase(updateBackendConfig.fulfilled, (state, action) => {
+        state.isUpdatingBackend = false
+        const { backendType, config } = action.payload
+        const backend = state.storageBackends.find(b => b.backend === backendType)
+        if (backend) {
+          backend.config = { ...backend.config, ...config }
+        }
+        state.success = 'Configuration updated successfully'
+        state.error = null
+      })
+      .addCase(updateBackendConfig.rejected, (state, action) => {
+        state.isUpdatingBackend = false
+        state.error = action.payload as string
+      })
+
+    // Toggle Backend
+    builder
+      .addCase(toggleBackend.pending, (state) => {
+        state.isUpdatingBackend = true
+        state.error = null
+      })
+      .addCase(toggleBackend.fulfilled, (state, action) => {
+        state.isUpdatingBackend = false
+        const backend = state.storageBackends.find(b => b.backend === action.payload)
+        if (backend) {
+          backend.enabled = !backend.enabled
+        }
+        state.success = `Backend ${action.payload} ${backend?.enabled ? 'enabled' : 'disabled'}`
+        state.error = null
+      })
+      .addCase(toggleBackend.rejected, (state, action) => {
+        state.isUpdatingBackend = false
+        state.error = action.payload as string
+      })
+
     // Test Storage Connection
     builder
       .addCase(testStorageConnection.pending, (state) => {
@@ -211,7 +387,8 @@ const settingsSlice = createSlice({
       .addCase(testStorageConnection.rejected, (state, action) => {
         state.isLoading = false
         const payload = action.payload as { backendType: string; error: string }
-        state.error = `Connection test failed for ${payload.backendType}: ${payload.error}`
+        console.log(payload)
+        state.error = payload.error
       })
   },
 })

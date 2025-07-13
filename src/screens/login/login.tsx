@@ -109,12 +109,7 @@ const Login = () => {
 
         <Divider my="xs" />
 
-        {/* Error Alert */}
-        {showError && (
-          <Alert icon={<IconInfoCircle size={16} />} title="Error" color="red" radius="md">
-            {error}
-          </Alert>
-        )}
+
 
         {/* Login Form */}
         <Stack gap="md">

@@ -30,7 +30,11 @@ import {
   deleteUser,
   clearError,
   clearSuccess,
-  setShowCreateUserModal
+  setShowCreateUserModal,
+  loadStorageBackends,
+  setCurrentBackend as setCurrentBackendSettings,
+  updateBackendConfig as updateBackendConfigSettings,
+  toggleBackend as toggleBackendSettings
 } from '@/store/slices/settings.slice'
 
 const Settings = () => {
@@ -39,11 +43,13 @@ const Settings = () => {
   const { user } = useAppSelector((state) => state.user)
   const { 
     users, 
+    storageBackends,
     isLoading, 
     error, 
     success, 
     isCreatingUser, 
-    showCreateUserModal 
+    showCreateUserModal,
+    isUpdatingBackend
   } = useAppSelector((state) => state.settings)
   
   const [s3Config, setS3Config] = useState({
@@ -60,9 +66,6 @@ const Settings = () => {
     secretAccessKey: ''
   })
 
-  const [backendLoading, setBackendLoading] = useState(false)
-  const [apiError, setApiError] = useState('')
-  
   // User management state
   const [newUser, setNewUser] = useState({
     email: '',
@@ -72,33 +75,7 @@ const Settings = () => {
 
   // Load storage backends from API
   useEffect(() => {
-    const loadStorageBackends = async () => {
-      try {
-        const response = await fetch('http://localhost:3006/api/storage/backends', {
-          credentials: 'include',
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          // Update Redux state with backend data
-          data.backends.forEach((backend: any) => {
-            if (backend.isCurrent) {
-              dispatch(setCurrentBackend(backend.backend))
-            }
-            if (backend.enabled) {
-              dispatch(toggleBackend(backend.backend))
-            }
-            if (backend.config) {
-              dispatch(updateBackendConfig({ backend: backend.backend, config: backend.config }))
-            }
-          })
-        }
-      } catch (error) {
-        console.error('Failed to load storage backends:', error)
-      }
-    }
-
-    loadStorageBackends()
+    dispatch(loadStorageBackends())
   }, [dispatch])
 
   // Load users on component mount
@@ -115,92 +92,32 @@ const Settings = () => {
   }, [dispatch])
 
   const handleBackendChange = async (backend: 'LOCAL' | 'S3' | 'R2') => {
-    setBackendLoading(true)
-    setApiError('')
-
-    try {
-      const response = await fetch('http://localhost:3006/api/storage/backends/current', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ backendType: backend }),
-      })
-
-      if (response.ok) {
-        dispatch(setCurrentBackend(backend))
-      } else {
-        const data = await response.json()
-        setApiError(data.error || 'Failed to change storage backend')
-      }
-    } catch (error) {
-      setApiError('Failed to change storage backend')
-    } finally {
-      setBackendLoading(false)
-    }
+    await dispatch(setCurrentBackendSettings(backend))
   }
 
   const handleS3ConfigUpdate = async (field: string, value: string) => {
     const newConfig = { ...s3Config, [field]: value }
     setS3Config(newConfig)
     
-    try {
-      await fetch('http://localhost:3006/api/storage/backends/S3/config', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(newConfig),
-      })
-      
-      dispatch(updateBackendConfig({ backend: 'S3', config: newConfig }))
-    } catch (error) {
-      console.error('Failed to update S3 config:', error)
-    }
+    await dispatch(updateBackendConfigSettings({ backendType: 'S3', config: newConfig }))
   }
 
   const handleR2ConfigUpdate = async (field: string, value: string) => {
     const newConfig = { ...r2Config, [field]: value }
     setR2Config(newConfig)
     
-    try {
-      await fetch('http://localhost:3006/api/storage/backends/R2/config', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(newConfig),
-      })
-      
-      dispatch(updateBackendConfig({ backend: 'R2', config: newConfig }))
-    } catch (error) {
-      console.error('Failed to update R2 config:', error)
-    }
+    await dispatch(updateBackendConfigSettings({ backendType: 'R2', config: newConfig }))
   }
 
   const handleToggleBackend = async (backend: 'LOCAL' | 'S3' | 'R2') => {
-    try {
-      await fetch(`http://localhost:3006/api/storage/backends/${backend}/toggle`, {
-        method: 'PUT',
-        credentials: 'include',
-      })
-      
-      dispatch(toggleBackend(backend))
-    } catch (error) {
-      console.error('Failed to toggle backend:', error)
-    }
+    await dispatch(toggleBackendSettings(backend))
   }
 
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.password) {
-      setApiError('Email and password are required')
-      return
+      return;
     }
 
-    setApiError('')
     const result = await dispatch(createUser(newUser))
     
     if (createUser.fulfilled.match(result)) {
@@ -232,14 +149,7 @@ const Settings = () => {
           <Text c="dimmed">Manage your platform configuration</Text>
         </Stack>
 
-        {/* Error Alert */}
-        {(error || apiError || storageError) && (
-          <Alert icon={<IconInfoCircle size={16} />} title="Error" color="red">
-            {error || apiError || storageError}
-          </Alert>
-        )}
-
-        {/* Success Alert */}
+        {/* Success Alert - Keep this for immediate feedback */}
         {success && (
           <Alert icon={<IconInfoCircle size={16} />} title="Success" color="green">
             {success}
@@ -263,7 +173,7 @@ const Settings = () => {
                 { value: 'S3', label: 'AWS S3' },
                 { value: 'R2', label: 'Cloudflare R2' }
               ]}
-              disabled={backendLoading}
+              disabled={isUpdatingBackend}
             />
 
             {/* S3 Configuration */}

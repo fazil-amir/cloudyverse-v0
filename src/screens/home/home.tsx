@@ -1,11 +1,19 @@
-import { useState, useEffect, useRef } from "react"
-import Breadcrumbs from "../../components/breadcrumbs"
-import FileToolbar from "../../components/file-toolbar"
-import FileSidebar from "../../components/file-sidebar"
-import FileDropzone from "../../components/file-dropzone"
-import FileContents from "../../components/file-contents"
-import EmptyState from "../../components/empty-state"
-import { rgba, Modal, Button, TextInput, Loader, Group } from "@mantine/core"
+import { useEffect, useRef, useState } from "react"
+import Breadcrumbs from "@/components/breadcrumbs"
+import FileToolbar from "@/components/file-toolbar"
+import FileSidebar from "@/components/file-sidebar"
+import FileDropzone from "@/components/file-dropzone"
+import FileContents from "@/components/file-contents"
+import EmptyState from "@/components/empty-state"
+import { rgba, Modal, Button, TextInput, Loader, Group, Alert } from "@mantine/core"
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  listFiles,
+  uploadFiles,
+  createFolder,
+  setCurrentPath,
+  clearError
+} from '@/store/slices/filemanager.slice';
 
 function pathToBreadcrumbs(path: string, onNav: (p: string) => void) {
   const parts = path ? path.split("/") : [];
@@ -23,11 +31,10 @@ function pathToBreadcrumbs(path: string, onNav: (p: string) => void) {
 }
 
 export default function Home() {
-  const [currentPath, setCurrentPath] = useState("");
-  const [files, setFiles] = useState<string[]>([]);
-  const [folders, setFolders] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const dispatch = useAppDispatch();
+  const { files, folders, loading, error, currentPath } = useAppSelector(state => state.filemanager);
+
+  // UI state only
   const [selected, setSelected] = useState<number[]>([]);
   const [sidebarFile, setSidebarFile] = useState<any>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -38,69 +45,30 @@ export default function Home() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
 
-  // Fetch files/folders for currentPath
+  // Initial load and whenever currentPath changes
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    fetch(`/api/platform/files?path=${encodeURIComponent(currentPath)}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) setError(data.error);
-        setFiles(data.files || []);
-        setFolders(data.folders || []);
-      })
-      .catch(() => setError("Failed to load directory"))
-      .finally(() => setLoading(false));
-  }, [currentPath]);
+    dispatch(listFiles(currentPath));
+  }, [dispatch, currentPath]);
 
   // Breadcrumbs
-  const breadcrumbs = pathToBreadcrumbs(currentPath, (p) => setCurrentPath(p));
+  const breadcrumbs = pathToBreadcrumbs(currentPath, (p) => dispatch(setCurrentPath(p)));
 
   // Handlers
   const handleOpen = (file: string, isFolder: boolean) => {
-    if (isFolder) setCurrentPath(currentPath ? currentPath + "/" + file : file);
+    if (isFolder) dispatch(setCurrentPath(currentPath ? currentPath + "/" + file : file));
     else setSidebarFile({ name: file });
   };
   const handleCloseSidebar = () => setSidebarFile(null);
   const handleUpload = async (filesToUpload: FileList | File[]) => {
-    const form = new FormData();
-    for (const file of Array.from(filesToUpload)) form.append('files', file);
-    await fetch(`/api/platform/files/upload?path=${encodeURIComponent(currentPath)}`, {
-      method: 'POST',
-      body: form,
-      credentials: 'include',
-    });
-    // Refresh
-    setLoading(true);
-    fetch(`/api/platform/files?path=${encodeURIComponent(currentPath)}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setFiles(data.files || []);
-        setFolders(data.folders || []);
-      })
-      .finally(() => setLoading(false));
+    await dispatch(uploadFiles({ files: filesToUpload, path: currentPath }));
   };
   const handleNewFolder = () => setShowNewFolder(true);
   const handleCreateFolder = async () => {
     setCreatingFolder(true);
-    await fetch('/api/platform/files/folder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ path: currentPath, name: newFolderName })
-    });
+    await dispatch(createFolder({ name: newFolderName, path: currentPath }));
     setShowNewFolder(false);
     setNewFolderName("");
     setCreatingFolder(false);
-    // Refresh
-    setLoading(true);
-    fetch(`/api/platform/files?path=${encodeURIComponent(currentPath)}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setFiles(data.files || []);
-        setFolders(data.folders || []);
-      })
-      .finally(() => setLoading(false));
   };
   const handleSearch = (value: string) => setSearch(value);
   const handleViewChange = (v: 'grid' | 'list') => setView(v);
@@ -192,6 +160,8 @@ export default function Home() {
       </Modal>
       {loading ? (
         <Loader mt="xl" />
+      ) : error ? (
+        <Alert color="red" title="Error" mt="md">{error}</Alert>
       ) : fileItems.length === 0 ? (
         <EmptyState
           title={search ? 'No files or folders found' : 'No files or folders in this directory'}

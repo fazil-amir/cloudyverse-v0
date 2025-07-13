@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { loginUser } from '@/store/slices/user.slice'
 import { performSetup, clearError, setSetupData } from '@/store/slices/setup.slice'
+import { showErrorToast } from '@/components/toast'
 import {
   Container,
   Title,
@@ -26,10 +27,8 @@ function toFolderName(str: string) {
 }
 
 const Setup = () => {
-  const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { isLoading, error, setupData } = useAppSelector((state) => state.setup)
-  const { user } = useAppSelector((state) => state.user)
   
   const [nameError, setNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -107,8 +106,10 @@ const Setup = () => {
           window.location.href = '/';
         } else {
           // Setup succeeded but auto-login failed
-          dispatch(clearError())
-          // You could set a specific error here if needed
+          showErrorToast({
+            title: 'Setup Complete',
+            message: 'Setup succeeded, but auto-login failed. Please try logging in manually.',
+          });
         }
       }
     } catch (err) {
@@ -141,12 +142,7 @@ const Setup = () => {
         <Alert icon={<IconInfoCircle size={16} />} title="Setup Information">
           This will create the first admin user and set up your shared storage folder. All users will share the same file storage area.
         </Alert>
-        {/* Error Alert */}
-        {error && (
-          <Alert icon={<IconInfoCircle size={16} />} title="Error" color="red">
-            {error}
-          </Alert>
-        )}
+
         {/* Setup Form */}
         <Stack gap="md">
           <TextInput
