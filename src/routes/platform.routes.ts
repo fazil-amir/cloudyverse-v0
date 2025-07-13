@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authMiddleware } from '@/middleware/auth.middleware.js';
 import { userModel } from '@/models/user.model.js';
 import { getDatabase, createDatabase, getFileDirectory, ensureFileDirectory } from '@/database/connection.js';
+import { storageManager } from '@/services/storage.js';
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
@@ -59,32 +60,14 @@ const upload = multer({ dest: path.join(process.cwd(), 'tmp_uploads') });
 router.get('/files', authMiddleware.authenticate, async (req, res) => {
   try {
     const { user: { userId } } = req;
-
-    const user = await userModel.findById(userId);
-    
-    if (!user || !user.home_directory) {
-      // console.log('User home directory not found', user);
-      return res.status(400).json({ userId:userId });
-    }
-
     const relPath = req.query.path ? String(req.query.path) : '';
     
     if (relPath.includes('..')) {
       return res.status(400).json({ error: 'Invalid path' });
     }
 
-    const fileRoot = getFileDirectory(user.home_directory);
-    const absPath = path.join(fileRoot, relPath);
-    
-    if (!fs.existsSync(absPath)) {
-      return res.status(404).json({ error: 'Directory not found' });
-    }
-    
-    const entries = fs.readdirSync(absPath, { withFileTypes: true });
-    const files = entries.filter(e => e.isFile()).map(e => e.name);
-    const folders = entries.filter(e => e.isDirectory()).map(e => e.name);
-    
-    res.json({ files, folders, path: relPath });
+    const result = await storageManager.listFiles(userId, relPath);
+    res.json({ files: result.files, folders: result.folders, path: relPath });
   } catch (error) {
     console.error('\n[Platform Route Error]\n', error, '\n');
     res.status(500).json({ error: (error as Error).message });
@@ -95,33 +78,15 @@ router.get('/files', authMiddleware.authenticate, async (req, res) => {
 router.post('/files/upload', authMiddleware.authenticate, upload.array('files'), async (req, res) => {
   try {
     const userId = (req as any).user.userId;
-    const user = await userModel.findById(userId);
-    
-    if (!user || !user.home_directory) {
-      return res.status(400).json({ error: 'User home directory not found' });
-    }
-
     const relPath = req.query.path ? String(req.query.path) : '';
     
     if (relPath.includes('..')) {
       return res.status(400).json({ error: 'Invalid path' });
     }
 
-    const fileRoot = getFileDirectory(user.home_directory);
-    const absPath = path.join(fileRoot, relPath);
-    
-    if (!fs.existsSync(absPath)) {
-      return res.status(404).json({ error: 'Directory not found' });
-    }
-    
-    const uploaded = [];
     const files = req.files as Express.Multer.File[];
-    for (const file of files) {
-      const dest = path.join(absPath, file.originalname);
-      fs.renameSync(file.path, dest);
-      uploaded.push(file.originalname);
-    }
-    res.json({ success: true, uploaded });
+    const result = await storageManager.uploadFiles(userId, files, relPath);
+    res.json(result);
   } catch (error) {
     console.error('\n[Platform Route Error]\n', error, '\n');
     res.status(500).json({ error: (error as Error).message });
@@ -132,12 +97,6 @@ router.post('/files/upload', authMiddleware.authenticate, upload.array('files'),
 router.post('/files/folder', authMiddleware.authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
-    const user = userModel.findById(userId);
-    
-    if (!user || !user.home_directory) {
-      return res.status(400).json({ error: 'User home directory not found' });
-    }
-
     const { path: relPath, name } = req.body;
     
     if (!name || !/^[a-zA-Z0-9-_ ]+$/.test(name)) {
@@ -148,14 +107,7 @@ router.post('/files/folder', authMiddleware.authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid path' });
     }
     
-    const fileRoot = getFileDirectory(user.home_directory);
-    const absPath = path.join(fileRoot, relPath ? `${relPath}/${name}` : name);
-    
-    if (fs.existsSync(absPath)) {
-      return res.status(400).json({ error: 'Folder already exists' });
-    }
-    
-    fs.mkdirSync(absPath, { recursive: true });
+    await storageManager.createFolder(userId, name, relPath || '');
     res.json({ success: true, folder: name });
   } catch (error) {
     console.error('\n[Platform Route Error]\n', error, '\n');
@@ -167,33 +119,87 @@ router.post('/files/folder', authMiddleware.authenticate, async (req, res) => {
 router.delete('/files', authMiddleware.authenticate, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
-    const user = userModel.findById(userId);
-    
-    if (!user || !user.home_directory) {
-      return res.status(400).json({ error: 'User home directory not found' });
-    }
-
     const { path: relPath } = req.query;
     
     if (!relPath || String(relPath).includes('..')) {
       return res.status(400).json({ error: 'Invalid path' });
     }
     
-    const fileRoot = getFileDirectory(user.home_directory);
-    const absPath = path.join(fileRoot, String(relPath));
+    const filePath = String(relPath);
+    const fileInfo = await storageManager.getFileInfo(userId, filePath);
     
-    if (!fs.existsSync(absPath)) {
+    if (!fileInfo) {
       return res.status(404).json({ error: 'File or folder not found' });
     }
     
-    const stats = fs.statSync(absPath);
-    if (stats.isDirectory()) {
-      fs.rmSync(absPath, { recursive: true, force: true });
+    if (fileInfo.type === 'folder') {
+      await storageManager.deleteFolder(userId, filePath);
     } else {
-      fs.unlinkSync(absPath);
+      await storageManager.deleteFile(userId, filePath);
     }
     
     res.json({ success: true, message: 'Deleted successfully' });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Move file or folder
+router.put('/files/move', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { sourcePath, destinationPath } = req.body;
+    
+    if (!sourcePath || !destinationPath) {
+      return res.status(400).json({ error: 'Source and destination paths are required' });
+    }
+    
+    if (sourcePath.includes('..') || destinationPath.includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+    
+    const fileInfo = await storageManager.getFileInfo(userId, sourcePath);
+    
+    if (!fileInfo) {
+      return res.status(404).json({ error: 'Source file or folder not found' });
+    }
+    
+    if (fileInfo.type === 'folder') {
+      await storageManager.moveFolder(userId, sourcePath, destinationPath);
+    } else {
+      await storageManager.moveFile(userId, sourcePath, destinationPath);
+    }
+    
+    res.json({ success: true, message: 'Moved successfully' });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Download file
+router.get('/files/download', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { path: filePath } = req.query;
+    
+    if (!filePath || String(filePath).includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+    
+    const fileInfo = await storageManager.getFileInfo(userId, String(filePath));
+    
+    if (!fileInfo || fileInfo.type === 'folder') {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    const fileStream = await storageManager.downloadFile(userId, String(filePath));
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${fileInfo.name}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    fileStream.pipe(res);
   } catch (error) {
     console.error('\n[Platform Route Error]\n', error, '\n');
     res.status(500).json({ error: (error as Error).message });

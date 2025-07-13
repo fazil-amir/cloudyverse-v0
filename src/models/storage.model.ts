@@ -2,7 +2,7 @@ import { getDatabase } from '@/database/connection.js';
 
 export interface StorageBackend {
   id: number;
-  backend_type: 'LOCAL' | 'S3' | 'R2';
+  backend_type: 'LOCAL' | 'S3' | 'R2' | 'WASABI';
   name: string;
   enabled: number; // SQLite returns 0 or 1
   is_current: number; // SQLite returns 0 or 1
@@ -27,14 +27,14 @@ export const storageModel = {
   },
 
   // Get storage backend by type
-  getByType: (backendType: 'LOCAL' | 'S3' | 'R2') => {
+  getByType: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     const db = getDatabase();
     const stmt = db.prepare('SELECT * FROM storage_backends WHERE backend_type = ?');
     return stmt.get(backendType) as StorageBackend | undefined;
   },
 
   // Set current storage backend
-  setCurrent: (backendType: 'LOCAL' | 'S3' | 'R2') => {
+  setCurrent: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     const db = getDatabase();
     // First, set all backends to not current
     db.prepare('UPDATE storage_backends SET is_current = 0').run();
@@ -45,7 +45,7 @@ export const storageModel = {
   },
 
   // Update storage backend configuration
-  updateConfig: (backendType: 'LOCAL' | 'S3' | 'R2', config: Record<string, any>) => {
+  updateConfig: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI', config: Record<string, any>) => {
     const db = getDatabase();
     const configJson = JSON.stringify(config);
     const stmt = db.prepare(`
@@ -57,7 +57,7 @@ export const storageModel = {
   },
 
   // Toggle storage backend enabled status
-  toggleEnabled: (backendType: 'LOCAL' | 'S3' | 'R2') => {
+  toggleEnabled: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     const db = getDatabase();
     const stmt = db.prepare(`
       UPDATE storage_backends 
@@ -69,7 +69,7 @@ export const storageModel = {
   },
 
   // Update storage backend name
-  updateName: (backendType: 'LOCAL' | 'S3' | 'R2', name: string) => {
+  updateName: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI', name: string) => {
     const db = getDatabase();
     const stmt = db.prepare(`
       UPDATE storage_backends 

@@ -24,11 +24,27 @@ import {
   updateBackendConfig, 
   toggleBackend
 } from '@/store/slices/storage.slice'
+import {
+  loadUsers,
+  createUser,
+  deleteUser,
+  clearError,
+  clearSuccess,
+  setShowCreateUserModal
+} from '@/store/slices/settings.slice'
 
 const Settings = () => {
   const dispatch = useAppDispatch()
-  const { currentBackend, backends, error } = useAppSelector((state) => state.storage)
+  const { currentBackend, backends, error: storageError } = useAppSelector((state) => state.storage)
   const { user } = useAppSelector((state) => state.user)
+  const { 
+    users, 
+    isLoading, 
+    error, 
+    success, 
+    isCreatingUser, 
+    showCreateUserModal 
+  } = useAppSelector((state) => state.settings)
   
   const [s3Config, setS3Config] = useState({
     bucket: '',
@@ -44,18 +60,15 @@ const Settings = () => {
     secretAccessKey: ''
   })
 
-  const [isLoading, setIsLoading] = useState(false)
+  const [backendLoading, setBackendLoading] = useState(false)
   const [apiError, setApiError] = useState('')
   
   // User management state
-  const [users, setUsers] = useState<any[]>([])
-  const [showCreateUser, setShowCreateUser] = useState(false)
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
     name: ''
   })
-  const [creatingUser, setCreatingUser] = useState(false)
 
   // Load storage backends from API
   useEffect(() => {
@@ -91,12 +104,18 @@ const Settings = () => {
   // Load users on component mount
   useEffect(() => {
     if (user?.role === 'admin') {
-      loadUsers()
+      dispatch(loadUsers())
     }
-  }, [user])
+  }, [dispatch, user])
+
+  // Clear errors and success messages
+  useEffect(() => {
+    dispatch(clearError())
+    dispatch(clearSuccess())
+  }, [dispatch])
 
   const handleBackendChange = async (backend: 'LOCAL' | 'S3' | 'R2') => {
-    setIsLoading(true)
+    setBackendLoading(true)
     setApiError('')
 
     try {
@@ -118,7 +137,7 @@ const Settings = () => {
     } catch (error) {
       setApiError('Failed to change storage backend')
     } finally {
-      setIsLoading(false)
+      setBackendLoading(false)
     }
   }
 
@@ -175,75 +194,33 @@ const Settings = () => {
     }
   }
 
-  // User management functions
-  const loadUsers = async () => {
-    try {
-      const response = await fetch('http://localhost:3006/api/platform/users', {
-        credentials: 'include',
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setUsers(data.users || [])
-      }
-    } catch (error) {
-      console.error('Failed to load users:', error)
-    }
-  }
-
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.password) {
       setApiError('Email and password are required')
       return
     }
 
-    setCreatingUser(true)
     setApiError('')
-
-    try {
-      const response = await fetch('http://localhost:3006/api/platform/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(newUser),
-      })
-
-      const data = await response.json()
-      
-      if (response.ok) {
-        setShowCreateUser(false)
-        setNewUser({ email: '', password: '', name: '' })
-        loadUsers() // Reload users list
-      } else {
-        setApiError(data.error || 'Failed to create user')
-      }
-    } catch (error) {
-      setApiError('Failed to create user')
-    } finally {
-      setCreatingUser(false)
+    const result = await dispatch(createUser(newUser))
+    
+    if (createUser.fulfilled.match(result)) {
+      setNewUser({ email: '', password: '', name: '' })
     }
   }
 
   const handleDeleteUser = async (userId: number) => {
     if (!confirm('Are you sure you want to delete this user?')) return
 
-    try {
-      const response = await fetch(`http://localhost:3006/api/platform/users/${userId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
+    await dispatch(deleteUser(userId))
+  }
 
-      if (response.ok) {
-        loadUsers() // Reload users list
-      } else {
-        const data = await response.json()
-        setApiError(data.error || 'Failed to delete user')
-      }
-    } catch (error) {
-      setApiError('Failed to delete user')
-    }
+  const handleOpenCreateUserModal = () => {
+    dispatch(setShowCreateUserModal(true))
+  }
+
+  const handleCloseCreateUserModal = () => {
+    dispatch(setShowCreateUserModal(false))
+    setNewUser({ email: '', password: '', name: '' })
   }
 
   return (
@@ -256,9 +233,16 @@ const Settings = () => {
         </Stack>
 
         {/* Error Alert */}
-        {apiError && (
+        {(error || apiError || storageError) && (
           <Alert icon={<IconInfoCircle size={16} />} title="Error" color="red">
-            {apiError}
+            {error || apiError || storageError}
+          </Alert>
+        )}
+
+        {/* Success Alert */}
+        {success && (
+          <Alert icon={<IconInfoCircle size={16} />} title="Success" color="green">
+            {success}
           </Alert>
         )}
 
@@ -279,7 +263,7 @@ const Settings = () => {
                 { value: 'S3', label: 'AWS S3' },
                 { value: 'R2', label: 'Cloudflare R2' }
               ]}
-              disabled={isLoading}
+              disabled={backendLoading}
             />
 
             {/* S3 Configuration */}
@@ -373,7 +357,7 @@ const Settings = () => {
                 </Group>
                 <Button
                   leftSection={<IconPlus size={16} />}
-                  onClick={() => setShowCreateUser(true)}
+                  onClick={handleOpenCreateUserModal}
                   size="sm"
                 >
                   Add User
@@ -422,8 +406,8 @@ const Settings = () => {
 
         {/* Create User Modal */}
         <Modal
-          opened={showCreateUser}
-          onClose={() => setShowCreateUser(false)}
+          opened={showCreateUserModal}
+          onClose={handleCloseCreateUserModal}
           title="Create New User"
           size="md"
         >
@@ -450,13 +434,13 @@ const Settings = () => {
               required
             />
             <Group justify="flex-end">
-              <Button variant="light" onClick={() => setShowCreateUser(false)}>
+              <Button variant="light" onClick={handleCloseCreateUserModal}>
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateUser}
-                loading={creatingUser}
-                disabled={creatingUser}
+                loading={isCreatingUser}
+                disabled={isCreatingUser}
               >
                 Create User
               </Button>

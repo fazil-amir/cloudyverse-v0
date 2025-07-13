@@ -1,7 +1,7 @@
 import { storageModel } from '@/models/storage.model.js';
 
 export interface StorageBackendConfig {
-  backend: 'LOCAL' | 'S3' | 'R2';
+  backend: 'LOCAL' | 'S3' | 'R2' | 'WASABI';
   name: string;
   enabled: boolean;
   config?: Record<string, any>;
@@ -45,7 +45,7 @@ export const storageService = {
   },
 
   // Set current storage backend
-  setCurrentBackend: (backendType: 'LOCAL' | 'S3' | 'R2') => {
+  setCurrentBackend: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     try {
       return storageModel.setCurrent(backendType);
     } catch (error) {
@@ -55,7 +55,7 @@ export const storageService = {
   },
 
   // Update storage backend configuration
-  updateBackendConfig: (backendType: 'LOCAL' | 'S3' | 'R2', config: Record<string, any>) => {
+  updateBackendConfig: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI', config: Record<string, any>) => {
     try {
       return storageModel.updateConfig(backendType, config);
     } catch (error) {
@@ -65,7 +65,7 @@ export const storageService = {
   },
 
   // Toggle storage backend enabled status
-  toggleBackend: (backendType: 'LOCAL' | 'S3' | 'R2') => {
+  toggleBackend: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     try {
       return storageModel.toggleEnabled(backendType);
     } catch (error) {
@@ -75,7 +75,7 @@ export const storageService = {
   },
 
   // Update storage backend name
-  updateBackendName: (backendType: 'LOCAL' | 'S3' | 'R2', name: string) => {
+  updateBackendName: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI', name: string) => {
     try {
       return storageModel.updateName(backendType, name);
     } catch (error) {
@@ -85,7 +85,7 @@ export const storageService = {
   },
 
   // Get storage backend by type
-  getBackendByType: (backendType: 'LOCAL' | 'S3' | 'R2') => {
+  getBackendByType: (backendType: 'LOCAL' | 'S3' | 'R2' | 'WASABI') => {
     try {
       const backend = storageModel.getByType(backendType);
       if (!backend) return null;

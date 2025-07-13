@@ -93,7 +93,8 @@ export const createDatabase = () => {
     INSERT OR IGNORE INTO storage_backends (backend_type, name, enabled, is_current, config) VALUES
     ('LOCAL', 'Local File System', 1, 1, '{}'),
     ('S3', 'AWS S3', 0, 0, '{"bucket":"","region":"","accessKeyId":"","secretAccessKey":""}'),
-    ('R2', 'Cloudflare R2', 0, 0, '{"bucket":"","accountId":"","accessKeyId":"","secretAccessKey":""}')
+    ('R2', 'Cloudflare R2', 0, 0, '{"bucket":"","accountId":"","accessKeyId":"","secretAccessKey":""}'),
+    ('WASABI', 'Wasabi Cloud Storage', 0, 0, '{"bucket":"","region":"","accessKeyId":"","secretAccessKey":""}')
   `);
 
   console.log(`Database created successfully at: ${dbPath}`);

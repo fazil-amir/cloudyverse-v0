@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { storageService } from '@/services/storage.service.js';
+import { storageService } from '@/services/platform-service.js';
 import { authMiddleware } from '@/middleware/auth.middleware.js';
+import { StorageAdapterFactory } from '@/adapters/factory.js';
+import { userModel } from '@/models/user.model.js';
 
 const router = Router();
 

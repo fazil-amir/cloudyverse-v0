@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppDispatch } from '@/store/hooks'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { loginUser } from '@/store/slices/user.slice'
+import { performSetup, clearError, setSetupData } from '@/store/slices/setup.slice'
 import {
   Container,
   Title,
@@ -16,12 +17,6 @@ import {
 } from '@mantine/core'
 import { IconInfoCircle, IconCloud } from '@tabler/icons-react'
 
-interface SetupData {
-  adminEmail: string
-  password: string
-  adminName: string
-}
-
 function toFolderName(str: string) {
   return str
     .toLowerCase()
@@ -31,24 +26,32 @@ function toFolderName(str: string) {
 }
 
 const Setup = () => {
+  const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { isLoading, error, setupData } = useAppSelector((state) => state.setup)
+  const { user } = useAppSelector((state) => state.user)
+  
   const [nameError, setNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
-  const [setupData, setSetupData] = useState<SetupData>({
-    adminEmail: '',
-    password: '',
-    adminName: ''
-  })
+  // Initialize setup data in Redux
+  useEffect(() => {
+    if (!setupData) {
+      dispatch(setSetupData({
+        adminEmail: '',
+        password: '',
+        adminName: '',
+        homeDirectory: ''
+      }))
+    }
+  }, [dispatch, setupData])
 
   // Auto-generate home directory from admin name
-  const homeDirectory = toFolderName(setupData.adminName)
+  const homeDirectory = setupData?.adminName ? toFolderName(setupData.adminName) : ''
 
-  const updateSetupData = (field: keyof SetupData, value: string) => {
-    setSetupData(prev => ({ ...prev, [field]: value }))
+  const updateSetupData = (field: 'adminEmail' | 'password' | 'adminName', value: string) => {
+    dispatch(setSetupData({ [field]: value }))
     if (field === 'adminName') setNameError(null)
     if (field === 'adminEmail') setEmailError(null)
     if (field === 'password') setPasswordError(null)
@@ -57,7 +60,7 @@ const Setup = () => {
   const validate = () => {
     let valid = true
     // Admin name: required, min 2
-    if (!setupData.adminName.trim()) {
+    if (!setupData?.adminName?.trim()) {
       setNameError('Admin name is required')
       valid = false
     } else if (setupData.adminName.trim().length < 2) {
@@ -65,7 +68,7 @@ const Setup = () => {
       valid = false
     }
     // Email: required, valid
-    if (!setupData.adminEmail.trim()) {
+    if (!setupData?.adminEmail?.trim()) {
       setEmailError('Admin email is required')
       valid = false
     } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(setupData.adminEmail.trim())) {
@@ -73,7 +76,7 @@ const Setup = () => {
       valid = false
     }
     // Password: required, min 8
-    if (!setupData.password) {
+    if (!setupData?.password) {
       setPasswordError('Password is required')
       valid = false
     } else if (setupData.password.length < 8) {
@@ -85,43 +88,38 @@ const Setup = () => {
   }
 
   const handleSetup = async () => {
-    if (!validate()) return
-    setIsLoading(true)
-    setError('')
+    if (!validate() || !setupData) return
+    
     try {
-      // Call platform setup API
-      const response = await fetch('http://localhost:3006/api/platform/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          adminEmail: setupData.adminEmail,
-          password: setupData.password,
-          adminName: setupData.adminName,
-          homeDirectory
-        }),
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || 'Setup failed')
-      }
-      // Auto-login the admin user
-      const loginResult = await dispatch(loginUser({
-        email: setupData.adminEmail,
-        password: setupData.password
+      // Perform setup with Redux action
+      const setupResult = await dispatch(performSetup({
+        ...setupData,
+        homeDirectory
       }))
-      if (loginUser.fulfilled.match(loginResult)) {
-        window.location.href = '/';
-      } else {
-        setError('Setup succeeded, but auto-login failed. Please try logging in manually.')
+      
+      if (performSetup.fulfilled.match(setupResult)) {
+        // Auto-login the admin user
+        const loginResult = await dispatch(loginUser({
+          email: setupData.adminEmail,
+          password: setupData.password
+        }))
+        if (loginUser.fulfilled.match(loginResult)) {
+          window.location.href = '/';
+        } else {
+          // Setup succeeded but auto-login failed
+          dispatch(clearError())
+          // You could set a specific error here if needed
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Setup failed. Please try again.')
-    } finally {
-      setIsLoading(false)
+      // Error handling is done in the Redux slice
     }
   }
+
+  // Clear error when component mounts
+  useEffect(() => {
+    dispatch(clearError())
+  }, [dispatch])
 
   return (
     <Container w="400px" p="xl">
@@ -154,7 +152,7 @@ const Setup = () => {
           <TextInput
             label="Full Name"
             placeholder="Enter your full name"
-            value={setupData.adminName}
+            value={setupData?.adminName || ''}
             onChange={(e) => updateSetupData('adminName', e.target.value)}
             required
             error={nameError}
@@ -162,7 +160,7 @@ const Setup = () => {
           <TextInput
             label="Email Address"
             placeholder="you@yourdomain.com"
-            value={setupData.adminEmail}
+            value={setupData?.adminEmail || ''}
             onChange={(e) => updateSetupData('adminEmail', e.target.value)}
             required
             error={emailError}
@@ -170,7 +168,7 @@ const Setup = () => {
           <PasswordInput
             label="Password"
             placeholder="Enter a password"
-            value={setupData.password}
+            value={setupData?.password || ''}
             onChange={(e) => updateSetupData('password', e.target.value)}
             required
             error={passwordError}

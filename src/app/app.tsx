@@ -9,7 +9,7 @@ import { Blank, Default } from '@/components/layouts'
 import AuthGuard from '@/components/auth-guard'
 
 import Home from '@/screens/home/home'
-import Settings from '@/screens/settings/settings'
+import Settings from '@/screens/settings/storage-settings'
 import Test from '@/screens/test/test'
 import Setup from '@/screens/setup/setup'
 import Login from '@/screens/login/login'
@@ -26,7 +26,7 @@ const SetupStatusProvider = ({ children }: { children: React.ReactNode }) => {
     const checkSetup = async () => {
       setLoading(true)
       try {
-        const res = await fetch('http://localhost:3006/api/platform/setup-status', { credentials: 'include' })
+        const res = await fetch('api/platform/setup-status', { credentials: 'include' })
         const data = await res.json()
         setSetupComplete(!!data.setupComplete)
       } catch {
