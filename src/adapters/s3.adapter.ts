@@ -31,8 +31,8 @@ export class S3StorageAdapter extends BaseStorageAdapter {
   }
 
   private getS3Key(relativePath: string, fileName?: string): string {
-    // Always use UPLOADS_BASE_DIR as the logical root
-    const baseKey = relativePath ? `${UPLOADS_BASE_DIR}/${relativePath}` : `${UPLOADS_BASE_DIR}`;
+    // Always use the user's home directory as the logical root
+    const baseKey = relativePath ? `${this.userHomeDirectory}/${relativePath}` : this.userHomeDirectory;
     return fileName ? `${baseKey}/${fileName}` : baseKey;
   }
 
