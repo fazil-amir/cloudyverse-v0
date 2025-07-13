@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloudyverse - Cloud Storage System</title>
+    <script>
+      // Color scheme script
+      (function() {
+        const colorScheme = localStorage.getItem('mantine-color-scheme') || 'light';
+        document.documentElement.setAttribute('data-mantine-color-scheme', colorScheme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/client.tsx"></script>
+  </body>
+</html> 

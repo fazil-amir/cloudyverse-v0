@@ -1,0 +1,4 @@
+.root {
+  padding: var(--mantine-spacing-md);
+  padding-top: 0;
+} 

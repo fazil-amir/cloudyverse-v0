@@ -1,0 +1,299 @@
+import { Router } from 'express';
+import { userService } from '@/services/user.service.js';
+import { authMiddleware } from '@/middleware/auth.middleware.js';
+import { userModel } from '@/models/user.model.js';
+import { getRootDirectory, getDatabase, createDatabase, getFileDirectory, ensureFileDirectory } from '@/database/connection.js';
+import fs from 'fs';
+import path from 'path';
+import multer from 'multer';
+
+const router = Router();
+
+// Setup status endpoint
+router.get('/setup-status', (_, res) => {
+  const setupComplete = userModel.isSetupComplete();
+  res.json({ setupComplete });
+});
+
+// Complete platform setup (create first admin)
+router.post('/setup', async (req, res) => {
+  try {
+    const { adminEmail, password, adminName, homeDirectory } = req.body;
+    
+    if (!adminEmail || !password || !homeDirectory) {
+      return res.status(400).json({ error: 'Admin email, password, and home directory are required' });
+    }
+
+    // Validate home directory name
+    if (!/^[a-zA-Z0-9-_]+$/.test(homeDirectory)) {
+      return res.status(400).json({ error: 'Home directory can only contain letters, numbers, hyphens, and underscores' });
+    }
+
+    // Check if setup is already complete
+    if (userModel.isSetupComplete()) {
+      return res.status(400).json({ error: 'Platform setup is already complete' });
+    }
+
+    // Create database (no longer needs homeDirectory parameter)
+    createDatabase();
+
+    // Create the first admin user
+    const result = await userModel.create(adminEmail, password, adminName, 'admin', homeDirectory);
+
+    // Create file directory
+    ensureFileDirectory(homeDirectory);
+
+    res.status(201).json({
+      success: true,
+      message: 'Platform setup completed successfully',
+      data: { id: result.lastInsertRowid, homeDirectory }
+    });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+// File management (shared storage for all users)
+// Multer setup for file uploads
+const upload = multer({ dest: path.join(process.cwd(), 'tmp_uploads') });
+
+// List files and folders in a directory
+router.get('/files', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const { user: { userId } } = req;
+
+    const user = await userModel.findById(userId);
+    
+    if (!user || !user.home_directory) {
+      // console.log('User home directory not found', user);
+      return res.status(400).json({ userId:userId });
+    }
+
+    const relPath = req.query.path ? String(req.query.path) : '';
+    
+    if (relPath.includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+
+    const fileRoot = getFileDirectory(user.home_directory);
+    const absPath = path.join(fileRoot, relPath);
+    
+    if (!fs.existsSync(absPath)) {
+      return res.status(404).json({ error: 'Directory not found' });
+    }
+    
+    const entries = fs.readdirSync(absPath, { withFileTypes: true });
+    const files = entries.filter(e => e.isFile()).map(e => e.name);
+    const folders = entries.filter(e => e.isDirectory()).map(e => e.name);
+    
+    res.json({ files, folders, path: relPath });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Upload files to a directory
+router.post('/files/upload', authMiddleware.authenticate, upload.array('files'), async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const user = await userModel.findById(userId);
+    
+    if (!user || !user.home_directory) {
+      return res.status(400).json({ error: 'User home directory not found' });
+    }
+
+    const relPath = req.query.path ? String(req.query.path) : '';
+    
+    if (relPath.includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+
+    const fileRoot = getFileDirectory(user.home_directory);
+    const absPath = path.join(fileRoot, relPath);
+    
+    if (!fs.existsSync(absPath)) {
+      return res.status(404).json({ error: 'Directory not found' });
+    }
+    
+    const uploaded = [];
+    const files = req.files as Express.Multer.File[];
+    for (const file of files) {
+      const dest = path.join(absPath, file.originalname);
+      fs.renameSync(file.path, dest);
+      uploaded.push(file.originalname);
+    }
+    res.json({ success: true, uploaded });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Create a new folder
+router.post('/files/folder', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const user = userModel.findById(userId);
+    
+    if (!user || !user.home_directory) {
+      return res.status(400).json({ error: 'User home directory not found' });
+    }
+
+    const { path: relPath, name } = req.body;
+    
+    if (!name || !/^[a-zA-Z0-9-_ ]+$/.test(name)) {
+      return res.status(400).json({ error: 'Invalid folder name' });
+    }
+    
+    if ((relPath || '').includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+    
+    const fileRoot = getFileDirectory(user.home_directory);
+    const absPath = path.join(fileRoot, relPath ? `${relPath}/${name}` : name);
+    
+    if (fs.existsSync(absPath)) {
+      return res.status(400).json({ error: 'Folder already exists' });
+    }
+    
+    fs.mkdirSync(absPath, { recursive: true });
+    res.json({ success: true, folder: name });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Delete file or folder
+router.delete('/files', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const user = userModel.findById(userId);
+    
+    if (!user || !user.home_directory) {
+      return res.status(400).json({ error: 'User home directory not found' });
+    }
+
+    const { path: relPath } = req.query;
+    
+    if (!relPath || String(relPath).includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+    
+    const fileRoot = getFileDirectory(user.home_directory);
+    const absPath = path.join(fileRoot, String(relPath));
+    
+    if (!fs.existsSync(absPath)) {
+      return res.status(404).json({ error: 'File or folder not found' });
+    }
+    
+    const stats = fs.statSync(absPath);
+    if (stats.isDirectory()) {
+      fs.rmSync(absPath, { recursive: true, force: true });
+    } else {
+      fs.unlinkSync(absPath);
+    }
+    
+    res.json({ success: true, message: 'Deleted successfully' });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// User management endpoints (admin only)
+router.post('/users', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const adminId = (req as any).user.userId;
+    
+    // Check if user is admin
+    if (!userModel.isAdmin(adminId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { email, password, name } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Get the home directory from the admin user
+    const adminUser = userModel.findById(adminId);
+    if (!adminUser || !adminUser.home_directory) {
+      return res.status(400).json({ error: 'Admin home directory not found' });
+    }
+    
+    const result = await userModel.create(email, password, name, 'user', adminUser.home_directory);
+    
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: { id: result.lastInsertRowid }
+    });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+// Get all users (admin only)
+router.get('/users', authMiddleware.authenticate, (req, res) => {
+  try {
+    const adminId = (req as any).user.userId;
+    
+    // Check if user is admin
+    if (!userModel.isAdmin(adminId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const users = userModel.getAllUsers();
+    res.json({ users });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/users/:userId', authMiddleware.authenticate, async (req, res) => {
+  try {
+    const adminId = (req as any).user.userId;
+    const userId = parseInt(req.params.userId);
+    
+    // Check if user is admin
+    if (!userModel.isAdmin(adminId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Prevent admin from deleting themselves
+    if (adminId === userId) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+    
+    const user = userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Prevent deleting the last admin
+    if (user.role === 'admin') {
+      const adminCount = userModel.getAllUsers().filter(u => u.role === 'admin').length;
+      if (adminCount <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the last admin user' });
+      }
+    }
+    
+    const db = getDatabase();
+    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
+    stmt.run(userId);
+    
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('\n[Platform Route Error]\n', error, '\n');
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+export default router; 

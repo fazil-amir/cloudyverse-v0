@@ -1,0 +1,37 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [
+    "src/server.ts",
+    "src/database/**/*",
+    "src/models/**/*",
+    "src/services/**/*",
+    "src/routes/**/*",
+    "src/middleware/**/*"
+  ],
+  "exclude": [
+    "src/app/**/*",
+    "src/components/**/*",
+    "src/screens/**/*",
+    "src/store/**/*",
+    "src/client.tsx",
+    "src/theme.ts",
+    "src/styles/**/*"
+  ]
+} 
