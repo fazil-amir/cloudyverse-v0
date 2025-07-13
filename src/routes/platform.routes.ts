@@ -5,8 +5,11 @@ import { getDatabase, createDatabase, getFileDirectory, ensureFileDirectory } fr
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
+import { toFolderName } from '@/utils/random-string.util.js';
+import { UPLOADS_BASE_DIR } from '@/constants/app-constants.constants.js';
 
 const router = Router();
+
 
 // Setup status endpoint
 router.get('/setup-status', (_, res) => {
@@ -17,32 +20,26 @@ router.get('/setup-status', (_, res) => {
 // Complete platform setup (create first admin)
 router.post('/setup', async (req, res) => {
   try {
-    const homeDirectory = 'uploads';
     const { adminEmail, password, adminName } = req.body;
-    
-    if (!adminEmail || !password || !homeDirectory) {
-      return res.status(400).json({ error: 'Admin email, password, and home directory are required' });
+    if (!adminEmail || !password || !adminName) {
+      return res.status(400).json({ error: 'Admin email, password, and name are required' });
     }
-
+    // Generate home directory from admin name
+    const folderName = toFolderName(adminName);
+    if (!folderName) {
+      return res.status(400).json({ error: 'Invalid admin name for folder' });
+    }
+    const homeDirectory = `${UPLOADS_BASE_DIR}/${folderName}`;
     // Validate home directory name
-    if (!/^[a-zA-Z0-9-_]+$/.test(homeDirectory)) {
+    if (!/^uploads\/[a-z0-9-_]+$/.test(homeDirectory)) {
       return res.status(400).json({ error: 'Home directory can only contain letters, numbers, hyphens, and underscores' });
     }
-
-    // Check if setup is already complete
     if (userModel.isSetupComplete()) {
       return res.status(400).json({ error: 'Platform setup is already complete' });
     }
-
-    // Create database (no longer needs homeDirectory parameter)
     createDatabase();
-
-    // Create the first admin user
     const result = await userModel.create(adminEmail, password, adminName, 'admin', homeDirectory);
-
-    // Create file directory
     ensureFileDirectory(homeDirectory);
-
     res.status(201).json({
       success: true,
       message: 'Platform setup completed successfully',
@@ -207,30 +204,30 @@ router.delete('/files', authMiddleware.authenticate, async (req, res) => {
 router.post('/users', authMiddleware.authenticate, async (req, res) => {
   try {
     const adminId = (req as any).user.userId;
-    
-    // Check if user is admin
     if (!userModel.isAdmin(adminId)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
-    
     const { email, password, name } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password, and name are required' });
     }
-
-    // Get the home directory from the admin user
-    const adminUser = userModel.findById(adminId);
-    if (!adminUser || !adminUser.home_directory) {
-      return res.status(400).json({ error: 'Admin home directory not found' });
+    // Generate user folder name from full name
+    const folderName = toFolderName(name);
+    if (!folderName) {
+      return res.status(400).json({ error: 'Invalid name for folder' });
     }
-    
-    const result = await userModel.create(email, password, name, 'user', adminUser.home_directory);
-    
+    const homeDirectory = `${UPLOADS_BASE_DIR}/${folderName}`;
+    // Validate home directory name
+    if (!/^uploads\/[a-z0-9-_]+$/.test(homeDirectory)) {
+      return res.status(400).json({ error: 'Home directory can only contain letters, numbers, hyphens, and underscores' });
+    }
+    // Create the user's folder
+    ensureFileDirectory(homeDirectory);
+    const result = await userModel.create(email, password, name, 'user', homeDirectory);
     res.status(201).json({
       success: true,
       message: 'User created successfully',
-      data: { id: result.lastInsertRowid }
+      data: { id: result.lastInsertRowid, homeDirectory }
     });
   } catch (error) {
     console.error('\n[Platform Route Error]\n', error, '\n');

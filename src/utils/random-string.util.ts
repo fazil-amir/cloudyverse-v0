@@ -27,3 +27,12 @@ export const generateRandomStringWithPrefix = (prefix: string = 'TEST'): string 
 export const generateMultipleRandomStrings = (count: number, length: number = 10): string[] => {
   return Array.from({ length: count }, () => generateRandomString(length));
 }; 
+
+// Convert a string (e.g., full name) to a valid folder name
+export const toFolderName = (str: string): string => {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9-_ ]/g, '') // remove non-allowed chars
+    .trim()
+    .replace(/ +/g, '-'); // spaces to dash
+}; 

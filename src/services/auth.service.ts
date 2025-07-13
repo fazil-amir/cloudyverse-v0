@@ -1,5 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { userModel, User } from '@/models/user.model.js';
+import { toFolderName } from '@/utils/random-string.util.js';
+import { ensureFileDirectory } from '@/database/connection.js';
+import { UPLOADS_BASE_DIR } from '@/constants/app-constants.constants.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '24h';
@@ -18,22 +21,32 @@ export const authService = {
       if (existingUser) {
         throw new Error('User already exists');
       }
-
+      // Generate user folder name from full name
+      if (!name) {
+        throw new Error('Name is required');
+      }
+      const folderName = toFolderName(name);
+      if (!folderName) {
+        throw new Error('Invalid name for folder');
+      }
+      const homeDirectory = `${UPLOADS_BASE_DIR}/${folderName}`;
+      if (!/^uploads\/[a-z0-9-_]+$/.test(homeDirectory)) {
+        throw new Error('Home directory can only contain letters, numbers, hyphens, and underscores');
+      }
+      // Create the user's folder
+      ensureFileDirectory(homeDirectory);
       // Create new user
-      const result = await userModel.create(email, password, name);
+      const result = await userModel.create(email, password, name, 'user', homeDirectory);
       const user = userModel.findById(result.lastInsertRowid as number);
-      
       if (!user) {
         throw new Error('Failed to create user');
       }
-
       // Generate JWT token
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
       );
-
       // Return user without password hash
       const { password_hash, ...userWithoutPassword } = user;
       return {

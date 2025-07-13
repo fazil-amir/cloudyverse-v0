@@ -19,7 +19,7 @@
     "start": "node dist/server.js",
     "kill-ports": "kill-port 3005 3006",
     "type-check": "tsc --noEmit",
-    "erase-db": "tsx src/database/erase-db.ts",
+    "db:reset": "rm -rf tmp_uploads uploads database.db && npm run dev",
     "check-node-version": "node -e \"if (process.version !== 'v22.14.0') { console.error('❌ This project requires Node.js v22.14.0. Current version: ' + process.version); console.error('Please run: nvm use'); process.exit(1); } else { console.log('✅ Node.js version is correct: ' + process.version); }\"",
     "setup-node": "./scripts/setup-node.sh"
   },
