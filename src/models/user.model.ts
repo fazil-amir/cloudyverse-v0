@@ -117,17 +117,13 @@ export const userModel = {
   isSetupComplete: () => {
     try {
       const db = getDatabase();
-  
-      // 1) Use COUNT(*) so you actually get a `count` field
-      // 2) Use a positional parameter to avoid quoting mistakes (and SQL-injection)
+
       const stmt = db.prepare(
         'SELECT COUNT(*) AS count FROM users WHERE LOWER(role) = LOWER(?)'
       );
   
       // Bind the value safely
       const result = stmt.get('admin') as { count: number };
-  
-      console.log('isSetupComplete result:', result);
       return result.count > 0;
     } catch (error) {
       console.error('Error in userModel.isSetupComplete:', error);

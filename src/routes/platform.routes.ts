@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { userService } from '@/services/user.service.js';
 import { authMiddleware } from '@/middleware/auth.middleware.js';
 import { userModel } from '@/models/user.model.js';
-import { getRootDirectory, getDatabase, createDatabase, getFileDirectory, ensureFileDirectory } from '@/database/connection.js';
+import { getDatabase, createDatabase, getFileDirectory, ensureFileDirectory } from '@/database/connection.js';
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
@@ -18,7 +17,8 @@ router.get('/setup-status', (_, res) => {
 // Complete platform setup (create first admin)
 router.post('/setup', async (req, res) => {
   try {
-    const { adminEmail, password, adminName, homeDirectory } = req.body;
+    const homeDirectory = 'uploads';
+    const { adminEmail, password, adminName } = req.body;
     
     if (!adminEmail || !password || !homeDirectory) {
       return res.status(400).json({ error: 'Admin email, password, and home directory are required' });

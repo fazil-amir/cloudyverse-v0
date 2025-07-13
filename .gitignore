@@ -62,3 +62,4 @@ jspm_packages/
 .yarn-integrity 
 
 tmp_uploads/
+uploads/

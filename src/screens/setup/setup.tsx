@@ -31,14 +31,12 @@ function toFolderName(str: string) {
 }
 
 const Setup = () => {
-  const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [nameError, setNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [homeDirectoryError, setHomeDirectoryError] = useState<string | null>(null)
 
   const [setupData, setSetupData] = useState<SetupData>({
     adminEmail: '',
@@ -54,7 +52,6 @@ const Setup = () => {
     if (field === 'adminName') setNameError(null)
     if (field === 'adminEmail') setEmailError(null)
     if (field === 'password') setPasswordError(null)
-    setHomeDirectoryError(null)
   }
 
   const validate = () => {
@@ -83,17 +80,7 @@ const Setup = () => {
       setPasswordError('Password must be at least 8 characters')
       valid = false
     }
-    // Home directory: required, valid format
-    if (!homeDirectory) {
-      setHomeDirectoryError('Home directory is required')
-      valid = false
-    } else if (!/^[a-z0-9-_]+$/.test(homeDirectory)) {
-      setHomeDirectoryError('Home directory can only contain lowercase letters, numbers, hyphens, and underscores')
-      valid = false
-    } else if (homeDirectory.length < 3) {
-      setHomeDirectoryError('Home directory must be at least 3 characters')
-      valid = false
-    }
+
     return valid
   }
 
@@ -125,7 +112,7 @@ const Setup = () => {
         password: setupData.password
       }))
       if (loginUser.fulfilled.match(loginResult)) {
-        // window.location.href = '/';
+        window.location.href = '/';
       } else {
         setError('Setup succeeded, but auto-login failed. Please try logging in manually.')
       }
@@ -171,15 +158,6 @@ const Setup = () => {
             onChange={(e) => updateSetupData('adminName', e.target.value)}
             required
             error={nameError}
-          />
-          <TextInput
-            label="Storage Folder"
-            placeholder="my-storage"
-            description="This will create a shared folder for your data"
-            value={homeDirectory}
-            disabled
-            required
-            error={homeDirectoryError}
           />
           <TextInput
             label="Email Address"
