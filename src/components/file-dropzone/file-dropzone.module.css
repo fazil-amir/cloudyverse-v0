@@ -1,3 +1,4 @@
+/* Modern file dropzone styles */
 .overlay {
   position: fixed;
   top: 0;
@@ -8,5 +9,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.content {
+  background: var(--bg-primary);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--mantine-radius-lg);
+  padding: var(--mantine-spacing-xl);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  transition: all 0.2s ease;
+}
+
+.content:hover {
+  border-color: var(--accent-color, #0ea5e9);
+  transform: scale(1.02);
 } 

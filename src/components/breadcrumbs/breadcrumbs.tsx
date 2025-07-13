@@ -1,6 +1,4 @@
-import { Breadcrumbs as MantineBreadcrumbs, Text } from '@mantine/core';
-// @ts-ignore
-import styles from './breadcrumbs.module.css';
+import { Breadcrumbs as MantineBreadcrumbs, Text, Container } from '@mantine/core';
 
 export interface BreadcrumbItem {
   title: string;
@@ -10,25 +8,29 @@ export interface BreadcrumbItem {
 
 export default function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
   return (
-    <MantineBreadcrumbs className={styles.root}>
-      {breadcrumbs.map((b, i) => (
-        <Text 
-          key={i} 
-          component="a" 
-          href={b.href} 
-          size="sm" 
-          color="dimmed"
-          onClick={(e) => {
-            if (b.onClick) {
-              e.preventDefault();
-              b.onClick();
-            }
-          }}
-          style={{ cursor: b.onClick ? 'pointer' : 'default' }}
-        >
-          {b.title}
-        </Text>
-      ))}
-    </MantineBreadcrumbs>
+    <>
+    <Container pt="md">
+      <MantineBreadcrumbs>
+        {breadcrumbs.map((b, i) => (
+          <Text 
+            key={i} 
+            component="a" 
+            href={b.href} 
+            size="sm" 
+            color="dimmed"
+            onClick={(e) => {
+              if (b.onClick) {
+                e.preventDefault();
+                b.onClick();
+              }
+            }}
+            style={{ cursor: b.onClick ? 'pointer' : 'default' }}
+          >
+            {b.title}
+          </Text>
+        ))}
+      </MantineBreadcrumbs>
+    </Container>
+    </>
   );
 } 

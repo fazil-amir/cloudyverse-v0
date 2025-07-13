@@ -1,4 +1,35 @@
+/* Modern file toolbar styles */
 .root {
-  padding: var(--mantine-spacing-md);
-  padding-top: 0;
+
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-md);
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.search {
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.viewToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
+
+.selectedInfo {
+  color: var(--text-secondary);
+  font-size: var(--mantine-font-size-sm);
 } 

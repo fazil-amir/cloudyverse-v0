@@ -2,7 +2,6 @@ import { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, 
 import { Readable } from 'stream';
 import { BaseStorageAdapter, UploadResult, FileInfo } from './base.adapter.js';
 import { createReadStream } from 'fs';
-import { UPLOADS_BASE_DIR } from '@/constants/app-constants.constants.js';
 
 export class S3StorageAdapter extends BaseStorageAdapter {
   private s3Client: S3Client;

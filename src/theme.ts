@@ -1,49 +1,64 @@
 import { createTheme, MantineColorsTuple } from '@mantine/core'
 
-// Custom color palette
-const myColor: MantineColorsTuple = [
-  "#d2b8de",
-  "#e9deee",
-  "#f6f0f9",
-  "#ba91cf",
-  "#a670c1",
-  "#9a5bb9",
-  "#9450b6",
-  "#8041a0",
-  "#72398f",
-  "#653080"
+// Modern neutral color palette
+const neutral: MantineColorsTuple = [
+  '#f8fafc',
+  '#f1f5f9',
+  '#e2e8f0',
+  '#cbd5e1',
+  '#94a3b8',
+  '#64748b',
+  '#475569',
+  '#334155',
+  '#1e293b',
+  '#0f172a'
 ];
 
-// Custom theme configuration
+// Modern accent color palette
+const accent: MantineColorsTuple = [
+  '#f0f9ff',
+  '#e0f2fe',
+  '#bae6fd',
+  '#7dd3fc',
+  '#38bdf8',
+  '#0ea5e9',
+  '#0284c7',
+  '#0369a1',
+  '#075985',
+  '#0c4a6e'
+];
+
+// Modern theme configuration
 export const theme = createTheme({
   // Custom colors
   colors: {
-    myColor
+    neutral,
+    accent
   },
 
-  // Set the custom color as the primary color
-  primaryColor: 'myColor',
+  // Set neutral as the primary color
+  primaryColor: 'neutral',
 
-  // Custom spacing scale
+  // Modern spacing scale
   spacing: {
     xs: '0.5rem',
     sm: '0.75rem',
     md: '1rem',
-    lg: '1.25rem',
-    xl: '1.5rem',
-    '2xl': '2rem',
-    '3xl': '3rem',
+    lg: '1.5rem',
+    xl: '2rem',
+    '2xl': '3rem',
+    '3xl': '4rem',
   },
 
-  // Custom typography
-  fontFamily: 'Poppins, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+  // Modern typography
+  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
   fontFamilyMonospace: 'JetBrains Mono, Monaco, Courier, monospace',
   
-  // Custom font sizes
+  // Modern font sizes
   fontSizes: {
     xs: '0.75rem',
     sm: '0.875rem',
-    md: '0.900rem',
+    md: '1rem',
     lg: '1.125rem',
     xl: '1.25rem',
     '2xl': '1.5rem',
@@ -51,35 +66,35 @@ export const theme = createTheme({
     '4xl': '2.25rem',
   },
 
-  // Custom line heights
+  // Modern line heights
   lineHeights: {
-    xs: '1.2',
-    sm: '1.4',
-    md: '1.6',
-    lg: '1.8',
-    xl: '2',
+    xs: '1.25',
+    sm: '1.375',
+    md: '1.5',
+    lg: '1.625',
+    xl: '1.75',
   },
 
-  // Custom border radius
+  // Modern border radius
   radius: {
-    xs: '0.05rem',
-    sm: '0.15rem',
-    md: '0.20rem',
-    lg: '0.25rem',
-    xl: '0.30rem',
-    '2xl': '1rem',
+    xs: '0.25rem',
+    sm: '0.375rem',
+    md: '0.5rem',
+    lg: '0.75rem',
+    xl: '1rem',
+    '2xl': '1.5rem',
   },
 
-  // Custom shadows
+  // Modern shadows
   shadows: {
-    xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    sm: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    sm: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
   },
 
-  // Custom breakpoints
+  // Modern breakpoints
   breakpoints: {
     xs: '36em',
     sm: '48em',
@@ -88,13 +103,13 @@ export const theme = createTheme({
     xl: '88em',
   },
 
-  // Custom headings
+  // Modern headings
   headings: {
-    fontFamily: 'Poppins, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
     fontWeight: '600',
     sizes: {
-      h1: { fontSize: '2.5rem', lineHeight: '1.2' },
-      h2: { fontSize: '2rem', lineHeight: '1.3' },
+      h1: { fontSize: '2.25rem', lineHeight: '1.2' },
+      h2: { fontSize: '1.875rem', lineHeight: '1.3' },
       h3: { fontSize: '1.5rem', lineHeight: '1.4' },
       h4: { fontSize: '1.25rem', lineHeight: '1.5' },
       h5: { fontSize: '1.125rem', lineHeight: '1.6' },
@@ -102,101 +117,188 @@ export const theme = createTheme({
     },
   },
 
-  // Custom components default props
+  // Modern components default props
   components: {
     Button: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         root: {
-          minHeight: '46px',
+          minHeight: '44px',
+          fontWeight: '500',
+          transition: 'all 0.2s ease',
         },
       },
     },
     Card: {
+      defaultProps: {
+        radius: 'lg',
+        withBorder: true,
+      },
       styles: {
         root: {
-          padding: 'var(--mantine-spacing-md)',
-          borderRadius: 'var(--mantine-radius-md)',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: 'var(--mantine-shadow-lg)',
+          },
         },
       },
     },
     Paper: {
       defaultProps: {
-        radius: 'md',
+        radius: 'lg',
         withBorder: true,
       },
       styles: {
         root: {
-          padding: 'var(--mantine-spacing-lg)',
+          transition: 'all 0.2s ease',
         },
       },
     },
     Drawer: {
+      defaultProps: {
+        radius: 'lg',
+      },
       styles: {
         content: {
           padding: 'var(--mantine-spacing-lg)',
+          border: '1px solid var(--mantine-color-neutral-3)',
         },
       },
     },
     Input: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         input: {
-          height: '46px',
+          height: '44px',
+          transition: 'all 0.2s ease',
         },
         label: {
-          marginBottom: '6px'
+          marginBottom: '8px',
+          fontWeight: '500',
         },
       },
     },
     TextInput: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         input: {
-          height: '46px',
+          height: '44px',
+          transition: 'all 0.2s ease',
         },
         label: {
-          marginBottom: '6px'
+          marginBottom: '8px',
+          fontWeight: '500',
         },
       },
     },
     PasswordInput: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         input: {
-          height: '46px',
+          height: '44px',
+          transition: 'all 0.2s ease',
         },
         label: {
-          marginBottom: '6px'
+          marginBottom: '8px',
+          fontWeight: '500',
         },
       },
     },
     NumberInput: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         input: {
-          height: '46px',
+          height: '44px',
+          transition: 'all 0.2s ease',
         },
         label: {
-          marginBottom: '6px'
+          marginBottom: '8px',
+          fontWeight: '500',
         },
       },
     },
     Select: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         input: {
-          height: '46px',
+          height: '44px',
+          transition: 'all 0.2s ease',
         },
         label: {
-          marginBottom: '6px'
+          marginBottom: '8px',
+          fontWeight: '500',
         },
       },
     },
     Textarea: {
       defaultProps: {
-        minRows: 5,
+        radius: 'md',
+        minRows: 4,
       },
       styles: {
         input: {
-          height: '120px',
+          transition: 'all 0.2s ease',
         },
         label: {
-          marginBottom: '6px'
+          marginBottom: '8px',
+          fontWeight: '500',
+        },
+      },
+    },
+    NavLink: {
+      defaultProps: {
+        radius: 'md',
+      },
+      styles: {
+        root: {
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            backgroundColor: 'var(--mantine-color-neutral-1)',
+          },
+        },
+      },
+    },
+    ActionIcon: {
+      defaultProps: {
+        radius: 'md',
+      },
+      styles: {
+        root: {
+          transition: 'all 0.2s ease',
+        },
+      },
+    },
+    Menu: {
+      defaultProps: {
+        radius: 'md',
+      },
+      styles: {
+        dropdown: {
+          border: '1px solid var(--mantine-color-neutral-3)',
+          boxShadow: 'var(--mantine-shadow-lg)',
+        },
+      },
+    },
+    Modal: {
+      defaultProps: {
+        radius: 'lg',
+      },
+      styles: {
+        content: {
+          border: '1px solid var(--mantine-color-neutral-3)',
         },
       },
     },
@@ -204,8 +306,8 @@ export const theme = createTheme({
 
   // Custom other properties
   other: {
-    // You can add custom properties here
     transition: 'all 0.2s ease',
     maxWidth: '1200px',
+    containerPadding: 'var(--mantine-spacing-lg)',
   },
 }); 

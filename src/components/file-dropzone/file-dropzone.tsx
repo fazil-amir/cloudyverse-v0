@@ -10,8 +10,10 @@ export interface FileDropzoneProps {
 export default function FileDropzone({ open, children, color }: FileDropzoneProps) {
   if (!open) return null;
   return (
-    <Box className={styles.overlay} style={{ background: color }}>
-      {children}
+    <Box className={styles.overlay}>
+      <Box className={styles.content}>
+        {children}
+      </Box>
     </Box>
   );
 } 

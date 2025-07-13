@@ -5,7 +5,7 @@ import FileSidebar from "@/components/file-sidebar"
 import FileDropzone from "@/components/file-dropzone"
 import FileContents from "@/components/file-contents"
 import EmptyState from "@/components/empty-state"
-import { rgba, Modal, Button, TextInput, Loader, Group, Alert } from "@mantine/core"
+import { rgba, Modal, Button, TextInput, Loader, Group, Alert, Text } from "@mantine/core"
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   listFiles,
@@ -113,7 +113,7 @@ export default function Home() {
       onDrop={handleDrop}
     >
       <FileSidebar file={sidebarFile} open={!!sidebarFile} onClose={handleCloseSidebar} />
-      <Breadcrumbs breadcrumbs={breadcrumbs.map(b => ({ title: b.title, href: '#', onClick: b.onClick }))} />
+
       <FileToolbar
         onUpload={() => {
           // Trigger file input click
@@ -137,10 +137,13 @@ export default function Home() {
         onDelete={() => {}}
         onUncheckAll={handleUncheckAll}
       />
-      <FileDropzone open={dragActive} color={rgba('#ad80ff', 0.5)}>
-        <div style={{ textAlign: 'center' }}>
-          <h2>Drop files to upload</h2>
-        </div>
+
+      <Breadcrumbs breadcrumbs={breadcrumbs.map(b => ({ title: b.title, href: '#', onClick: b.onClick }))} />
+
+      <FileDropzone open={dragActive} color={rgba('#0ea5e9', 0.5)}>
+        <Text size="xl" fw={600} ta="center">
+          Drop files to upload
+        </Text>
       </FileDropzone>
       <Modal opened={showNewFolder} onClose={() => setShowNewFolder(false)} title="Create New Folder" centered>
         <TextInput

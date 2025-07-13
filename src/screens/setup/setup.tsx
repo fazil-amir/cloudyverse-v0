@@ -14,7 +14,9 @@ import {
   Button,
   Divider,
   Alert,
-  ThemeIcon
+  ThemeIcon,
+  Center,
+  Card
 } from '@mantine/core'
 import { IconInfoCircle, IconCloud } from '@tabler/icons-react'
 
@@ -123,65 +125,70 @@ const Setup = () => {
   }, [dispatch])
 
   return (
-    <Container w="400px" p="xl">
-      <Stack gap="lg">
-        {/* Header */}
-        <Stack gap="xs" align="center">
-          <ThemeIcon size="xl" radius="xl" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-            <IconCloud size="2rem" />
-          </ThemeIcon>
-          <Title order={1} size="xl" variant="gradient">
-            Welcome to Cloudyverse
-          </Title>
-          <Text c="dimmed" ta="center">
-            Let's set up your file storage platform
-          </Text>
-        </Stack>
-        <Divider />
-        {/* Info Alert */}
-        <Alert icon={<IconInfoCircle size={16} />} title="Setup Information">
-          This will create the first admin user and set up your shared storage folder. All users will share the same file storage area.
-        </Alert>
+    <Center h="100vh">
+      <Container size="sm" p="xl">
+        <Card p="xl" radius="lg">
+          <Stack gap="lg">
+            {/* Header */}
+            <Stack gap="xs" align="center">
+              <ThemeIcon size="xl" radius="xl" variant="gradient" gradient={{ from: 'accent.4', to: 'accent.8' }}>
+                <IconCloud size="2rem" />
+              </ThemeIcon>
+              <Text size="xl" fw={700} variant="gradient" gradient={{ from: 'accent.4', to: 'accent.8' }}>
+                Welcome to Cloudyverse
+              </Text>
+              <Text c="dimmed" ta="center">
+                Let's set up your file storage platform
+              </Text>
+            </Stack>
+            <Divider />
+            {/* Info Alert */}
+            <Alert icon={<IconInfoCircle size={16} />} title="Setup Information">
+              This will create the first admin user and set up your shared storage folder. All users will share the same file storage area.
+            </Alert>
 
-        {/* Setup Form */}
-        <Stack gap="md">
-          <TextInput
-            label="Full Name"
-            placeholder="Enter your full name"
-            value={setupData?.adminName || ''}
-            onChange={(e) => updateSetupData('adminName', e.target.value)}
-            required
-            error={nameError}
-          />
-          <TextInput
-            label="Email Address"
-            placeholder="you@yourdomain.com"
-            value={setupData?.adminEmail || ''}
-            onChange={(e) => updateSetupData('adminEmail', e.target.value)}
-            required
-            error={emailError}
-          />
-          <PasswordInput
-            label="Password"
-            placeholder="Enter a password"
-            value={setupData?.password || ''}
-            onChange={(e) => updateSetupData('password', e.target.value)}
-            required
-            error={passwordError}
-          />
-          <Button
-            onClick={handleSetup}
-            loading={isLoading}
-            disabled={isLoading}
-            size="md"
-            fullWidth
-            mt="lg"
-          >
-            Complete Setup
-          </Button>
-        </Stack>
-      </Stack>
-    </Container>
+            {/* Setup Form */}
+            <Stack gap="md">
+              <TextInput
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={setupData?.adminName || ''}
+                onChange={(e) => updateSetupData('adminName', e.target.value)}
+                required
+                error={nameError}
+              />
+              <TextInput
+                label="Email Address"
+                placeholder="you@yourdomain.com"
+                value={setupData?.adminEmail || ''}
+                onChange={(e) => updateSetupData('adminEmail', e.target.value)}
+                required
+                error={emailError}
+              />
+              <PasswordInput
+                label="Password"
+                placeholder="Enter a password"
+                value={setupData?.password || ''}
+                onChange={(e) => updateSetupData('password', e.target.value)}
+                required
+                error={passwordError}
+              />
+              <Button
+                onClick={handleSetup}
+                loading={isLoading}
+                disabled={isLoading}
+                size="md"
+                fullWidth
+                mt="lg"
+                fw={600}
+              >
+                Complete Setup
+              </Button>
+            </Stack>
+          </Stack>
+        </Card>
+      </Container>
+    </Center>
   )
 }
 

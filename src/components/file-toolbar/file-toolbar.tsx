@@ -1,6 +1,5 @@
-import { Group, Button, Input, Menu, Divider } from '@mantine/core';
+import { Group, Button, Input, Divider, Container } from '@mantine/core';
 import { IconUpload, IconFolder, IconSearch, IconTrash, IconX } from '@tabler/icons-react';
-// @ts-ignore
 import styles from './file-toolbar.module.css';
 
 export interface FileToolbarProps {
@@ -17,7 +16,7 @@ export interface FileToolbarProps {
 
 export default function FileToolbar({ onUpload, onNewFolder, onSearch, searchValue, view, onViewChange, selectedCount, onDelete, onUncheckAll }: FileToolbarProps) {
   return (
-    <>
+    <Container pt="md">
       <Group className={styles.root} justify="space-between" align="center">
         <Group gap="sm">
           <Button leftSection={<IconUpload size={18} />} onClick={onUpload}>
@@ -46,7 +45,6 @@ export default function FileToolbar({ onUpload, onNewFolder, onSearch, searchVal
         />
         {/* Add grid/list toggle here if needed */}
       </Group>
-      <Divider />
-    </>
+    </Container>
   );
 } 

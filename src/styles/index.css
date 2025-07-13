@@ -1,31 +1,269 @@
+/* Modern CSS Reset and Base Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* CSS Variables for theme colors */
+:root {
+  /* Light mode colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Dark mode colors */
+[data-mantine-color-scheme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --border-hover: #475569;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  background-attachment: fixed;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
 
-/* Ensure Mantine components work well with our background */
+/* Modern scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* Modern focus styles */
+*:focus-visible {
+  outline: 2px solid var(--accent-color, #0ea5e9);
+  outline-offset: 2px;
+}
+
+/* Modern selection styles */
+::selection {
+  background-color: var(--accent-color, #0ea5e9);
+  color: white;
+}
+
+/* Modern Mantine component overrides */
 .mantine-Paper-root {
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.95) !important;
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  transition: all 0.2s ease;
 }
 
 .mantine-Card-root {
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  transition: all 0.2s ease;
+}
+
+.mantine-Card-root:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.mantine-NavLink-root {
+  transition: all 0.2s ease;
+}
+
+.mantine-NavLink-root:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+.mantine-Button-root {
+  transition: all 0.2s ease;
+}
+
+.mantine-Button-root:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.mantine-Input-input,
+.mantine-TextInput-input,
+.mantine-PasswordInput-input,
+.mantine-NumberInput-input,
+.mantine-Select-input,
+.mantine-Textarea-input {
+  transition: all 0.2s ease;
+  border-color: var(--border-color) !important;
+}
+
+.mantine-Input-input:focus,
+.mantine-TextInput-input:focus,
+.mantine-PasswordInput-input:focus,
+.mantine-NumberInput-input:focus,
+.mantine-Select-input:focus,
+.mantine-Textarea-input:focus {
+  border-color: var(--accent-color, #0ea5e9) !important;
+  box-shadow: 0 0 0 3px rgb(14 165 233 / 0.1);
+}
+
+.mantine-Modal-content,
+.mantine-Drawer-content {
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.mantine-Menu-dropdown {
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Modern loading states */
+.mantine-Loader-root {
+  color: var(--accent-color, #0ea5e9);
+}
+
+/* Modern alert styles */
+.mantine-Alert-root {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+/* Modern divider styles */
+.mantine-Divider-root {
+  border-color: var(--border-color);
+}
+
+/* Modern action icon styles */
+.mantine-ActionIcon-root {
+  transition: all 0.2s ease;
+}
+
+.mantine-ActionIcon-root:hover {
+  transform: scale(1.05);
+}
+
+/* Modern avatar styles */
+.mantine-Avatar-root {
+  border: 2px solid var(--border-color);
+}
+
+/* Modern theme icon styles */
+.mantine-ThemeIcon-root {
+  transition: all 0.2s ease;
+}
+
+/* Modern text gradient styles */
+.mantine-Text-root[data-variant="gradient"] {
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Modern container styles */
+.mantine-Container-root {
+  max-width: var(--mantine-other-maxWidth, 1200px);
+  padding: 0 var(--mantine-other-containerPadding, var(--mantine-spacing-lg));
+}
+
+/* Modern flex and grid styles */
+.mantine-Flex-root,
+.mantine-Grid-root {
+  gap: var(--mantine-spacing-md);
+}
+
+/* Modern stack styles */
+.mantine-Stack-root {
+  gap: var(--mantine-spacing-md);
+}
+
+/* Modern group styles */
+.mantine-Group-root {
+  gap: var(--mantine-spacing-sm);
+}
+
+/* Modern space styles */
+.mantine-Space-root {
+  height: var(--mantine-spacing-md);
+}
+
+/* Modern center styles */
+.mantine-Center-root {
+  min-height: 100vh;
+}
+
+/* Modern aspect ratio styles */
+.mantine-AspectRatio-root {
+  border-radius: var(--mantine-radius-lg);
+  overflow: hidden;
+}
+
+/* Modern simple grid styles */
+.mantine-SimpleGrid-root {
+  gap: var(--mantine-spacing-lg);
+}
+
+/* Modern container styles */
+.mantine-Container-root {
+  margin: 0 auto;
+}
+
+/* Modern responsive utilities */
+@media (max-width: 768px) {
+  .mantine-Container-root {
+    padding: 0 var(--mantine-spacing-md);
+  }
+  
+  .mantine-SimpleGrid-root {
+    gap: var(--mantine-spacing-md);
+  }
+}
+
+/* Modern print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .mantine-Paper-root,
+  .mantine-Card-root {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+  }
 } 

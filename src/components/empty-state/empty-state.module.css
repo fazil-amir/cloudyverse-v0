@@ -1,3 +1,26 @@
+/* Modern empty state styles */
 .root {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 400px;
+}
+
+.icon {
+  color: var(--text-muted);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.title {
+  color: var(--text-primary);
+  margin-bottom: var(--mantine-spacing-sm);
+}
+
+.description {
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.6;
 } 

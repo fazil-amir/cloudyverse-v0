@@ -1,18 +1,20 @@
+/* Modern file contents styles */
 .root {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
+  gap: var(--mantine-spacing-md);
 }
 
 .card {
   position: relative;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  border-radius: var(--mantine-radius-lg);
+  overflow: hidden;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .card:hover .checkbox,
@@ -23,8 +25,8 @@
 
 .checkbox {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: var(--mantine-spacing-sm);
+  left: var(--mantine-spacing-sm);
   z-index: 100;
   opacity: 0;
   visibility: hidden;
@@ -38,6 +40,16 @@
   justify-content: center;
   min-height: 120px;
   cursor: pointer;
+  padding: var(--mantine-spacing-md);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--mantine-radius-lg);
+  transition: all 0.2s ease;
+}
+
+.cardContent:hover {
+  border-color: var(--accent-color, #0ea5e9);
+  background: var(--bg-secondary);
 }
 
 .cardName {
@@ -47,4 +59,46 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-top: var(--mantine-spacing-sm);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-md);
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  padding: var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+.listItem:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-color, #0ea5e9);
+}
+
+.listItem.selected {
+  background: var(--accent-color, #0ea5e9);
+  color: white;
+}
+
+.listItemName {
+  flex: 1;
+  margin-left: var(--mantine-spacing-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.listItem.selected .listItemName {
+  color: white;
 } 

@@ -1,4 +1,4 @@
-import { Card, Box, Checkbox, Text, Image, Badge } from '@mantine/core';
+import { Card, Box, Checkbox, Text, Image, Badge, Container } from '@mantine/core';
 import { 
   IconFolder, 
   IconFileText, 
@@ -192,36 +192,38 @@ export default function FileContents({ files, selected, onSelect, onOpen, view }
   };
 
   return (
-    <Box className={styles.root}>
-      {files.map((item) => (
-        <Card
-          key={item.id}
-          className={`${styles.card} ${selected.includes(item.id) ? styles.selected : ''}`}
-          p="lg"
-          withBorder={selected.includes(item.id)}
-        >
-          <Checkbox
-            size="xs"
-            checked={selected.includes(item.id)}
-            onChange={() => onSelect(item.id)}
-            className={styles.checkbox}
-            tabIndex={-1}
-            onClick={e => e.stopPropagation()}
-          />
-          {getFileBadge(item)}
-          <Box className={styles.cardContent} onClick={() => handleClick(item)}>
-            {getFilePreview(item)}
-          </Box>
-          <Text size="sm" mt={4} className={styles.cardName}>
-            {item.name}
-          </Text>
-          {item.size && (
-            <Text size="xs" color="dimmed" ta="center" mt={2}>
-              {item.size}
+    <Container pt="md"> 
+      <Box className={styles.root}>
+        {files.map((item) => (
+          <Card
+            key={item.id}
+            className={`${styles.card} ${selected.includes(item.id) ? styles.selected : ''}`}
+            p="lg"
+            withBorder={selected.includes(item.id)}
+          >
+            <Checkbox
+              size="xs"
+              checked={selected.includes(item.id)}
+              onChange={() => onSelect(item.id)}
+              className={styles.checkbox}
+              tabIndex={-1}
+              onClick={e => e.stopPropagation()}
+            />
+            {getFileBadge(item)}
+            <Box className={styles.cardContent} onClick={() => handleClick(item)}>
+              {getFilePreview(item)}
+            </Box>
+            <Text size="sm" mt={4} className={styles.cardName}>
+              {item.name}
             </Text>
-          )}
-        </Card>
-      ))}
-    </Box>
+            {item.size && (
+              <Text size="xs" color="dimmed" ta="center" mt={2}>
+                {item.size}
+              </Text>
+            )}
+          </Card>
+        ))}
+      </Box>
+    </Container>
   );
 } 

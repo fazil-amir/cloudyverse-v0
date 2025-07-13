@@ -1,3 +1,35 @@
+/* Modern breadcrumbs styles */
 .root {
-  padding: var(--mantine-spacing-md);
+  background: var(--bg-primary);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  flex-wrap: wrap;
+}
+
+.breadcrumbItem {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.breadcrumbItem:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  text-decoration: none;
+}
+
+.breadcrumbItem.active {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.separator {
+  color: var(--text-muted);
+  margin: 0 var(--mantine-spacing-xs);
 }

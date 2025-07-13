@@ -31,123 +31,113 @@ const Navbar = () => {
     navigate('/login')
   }
 
-  console.log({
-    user,
-    isAuthenticated
-  })
-
   return (
-    <>
-      <nav style={{ 
-        padding: 'var(--mantine-spacing-md) 0', 
-      }}>
-        <Container fluid>
-          <Flex justify="space-between" align="center" gap="xs">
+    <nav>
+      <Container>
+
+        <Flex justify="space-between" align="center" gap="xs" py="md" w="100%">
+          
+          <Flex gap="lg" direction="">
             
-            <Flex gap="lg" flex="col">
-              
-              {/* Logo and Title */}
-              <Flex gap="xs" align="center">
-                <ThemeIcon size="xl" radius="xl" variant="gradient" gradient={{ from: 'myColor.4', to: 'myColor.8' }}>
-                  <IconCloud size="2rem" />
-                </ThemeIcon>
-                <Text size="xl" fw={700} variant="gradient" gradient={{ from: 'myColor.4', to: 'myColor.8' }}>
-                  Cloudyverse
-                </Text>
-              </Flex>
-
-              {/* Navigation Links */}
-              <NavLink
-                component={Link}
-                to="/"
-                label="Home"
-                leftSection={<IconHome size="1.2rem" />}
-                variant="light"
-                
-              />
-              <NavLink
-                component={Link}
-                to="/settings"
-                label="Settings"
-                leftSection={<IconSettings size="1.2rem" />}
-                variant="light"
-                
-              />
-              <NavLink
-                component={Link}
-                to="/setup"
-                label="Setup"
-                leftSection={<IconSettings size="1.2rem" />}
-                variant="light"
-              />
-              {!isAuthenticated ? (
-                <NavLink
-                  component={Link}
-                  to="/login"
-                  label="Login"
-                  leftSection={<IconLogin size="1.2rem" />}
-                  variant="light"
-                />
-              ) : null}
-              <NavLink
-                component={Link}
-                to="/test"
-                label="Test"
-                leftSection={<IconTestPipe size="1.2rem" />}
-                variant="light"
-                
-              />
-            </Flex>
-
-            {/* User Menu / Theme Toggle */}
+            {/* Logo and Title */}
             <Flex gap="xs" align="center">
-              {isAuthenticated && user ? (
-                <Menu shadow="md" width={200}>
-                  <Menu.Target>
-                    <Avatar 
-                      color="blue" 
-                      radius="xl"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
-                    </Avatar>
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    <Menu.Label>User</Menu.Label>
-                    <Menu.Item leftSection={<IconUser size={14} />}>
-                      {user.email}
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item 
-                      leftSection={<IconLogout size={14} />}
-                      onClick={handleLogout}
-                      color="red"
-                    >
-                      Logout
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              ) : null}
-
-              <ActionIcon
-                onClick={toggleColorScheme}
-                variant="light"
-                size="lg"
-                aria-label="Toggle color scheme"
-              >
-                {computedColorScheme === 'light' ? (
-                  <IconMoon size="1.2rem" />
-                ) : (
-                  <IconSun size="1.2rem" />
-                )}
-              </ActionIcon>
+              <ThemeIcon size="xl" radius="xl" variant="gradient" gradient={{ from: 'accent.4', to: 'accent.8' }}>
+                <IconCloud size="2rem" />
+              </ThemeIcon>
+              <Text size="xl" fw={700} variant="gradient" gradient={{ from: 'accent.4', to: 'accent.8' }}>
+                Cloudyverse
+              </Text>
             </Flex>
+
+            {/* Navigation Links */}
+            <NavLink
+              component={Link}
+              to="/"
+              label="Home"
+              leftSection={<IconHome size="1.2rem" />}
+              variant="light"
+            />
+            <NavLink
+              component={Link}
+              to="/settings"
+              label="Settings"
+              leftSection={<IconSettings size="1.2rem" />}
+              variant="light"
+            />
+            <NavLink
+              component={Link}
+              to="/setup"
+              label="Setup"
+              leftSection={<IconSettings size="1.2rem" />}
+              variant="light"
+            />
+            {!isAuthenticated ? (
+              <NavLink
+                component={Link}
+                to="/login"
+                label="Login"
+                leftSection={<IconLogin size="1.2rem" />}
+                variant="light"
+              />
+            ) : null}
+            <NavLink
+              component={Link}
+              to="/test"
+              label="Test"
+              leftSection={<IconTestPipe size="1.2rem" />}
+              variant="light"
+            />
           </Flex>
-        </Container>
-      </nav>
+
+          {/* User Menu / Theme Toggle */}
+          <Flex gap="xs" align="center">
+            {isAuthenticated && user ? (
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <Avatar 
+                    color="accent" 
+                    radius="xl"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                  </Avatar>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>User</Menu.Label>
+                  <Menu.Item leftSection={<IconUser size={14} />}>
+                    {user.email}
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item 
+                    leftSection={<IconLogout size={14} />}
+                    onClick={handleLogout}
+                    color="red"
+                  >
+                    Logout
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            ) : null}
+
+            <ActionIcon
+              onClick={toggleColorScheme}
+              variant="light"
+              size="lg"
+              aria-label="Toggle color scheme"
+            >
+              {computedColorScheme === 'light' ? (
+                <IconMoon size="1.2rem" />
+              ) : (
+                <IconSun size="1.2rem" />
+              )}
+            </ActionIcon>
+          </Flex>
+        </Flex>
+
+      </Container>
       <Divider />
-    </>
+    </nav>
   )
 }
 
